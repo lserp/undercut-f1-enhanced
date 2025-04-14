@@ -23,7 +23,7 @@ public class TimingHistoryDisplay(
 {
     public Screen Screen => Screen.TimingHistory;
 
-    private const int LEFT_OFFSET = 70; // The normal width of the timing table
+    private const int LEFT_OFFSET = 68; // The normal width of the timing table
     private const int BOTTOM_OFFSET = 2;
     private const int LAPS_IN_CHART = 15;
 
@@ -98,14 +98,17 @@ public class TimingHistoryDisplay(
             var previousLap = previousLapDrivers?.GetValueOrDefault(driverNumber) ?? new();
             var teamColour = driver.TeamColour ?? "000000";
 
-            var positionChange = line.Line - previousLap.Line;
-
             var driverTagDecoration = state.SelectedDrivers.Contains(driverNumber)
                 ? Decoration.None
                 : Decoration.Dim;
 
             table.AddRow(
-                DisplayUtils.DriverTag(driver, line, decoration: driverTagDecoration),
+                DisplayUtils.DriverTag(
+                    driver,
+                    line,
+                    positionChange: line.Line - previousLap.Line,
+                    decoration: driverTagDecoration
+                ),
                 new Markup(
                     $"{line.GapToLeader}{GetMarkedUp(line.GapToLeaderSeconds() - previousLap.GapToLeaderSeconds())}"
                         ?? "",
@@ -128,8 +131,7 @@ public class TimingHistoryDisplay(
                 new Text(
                     line.Sectors.GetValueOrDefault("2")?.Value ?? "",
                     GetStyle(line.Sectors.GetValueOrDefault("2"))
-                ),
-                new Markup(GetPositionChangeMarkup(positionChange))
+                )
             );
         }
 

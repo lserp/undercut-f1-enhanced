@@ -28,7 +28,7 @@ public class TimingDataProcessor(IMapper mapper) : IProcessor<TimingDataPoint>
     {
         _ = mapper.Map(data, Latest);
 
-        foreach (var (driverNumber, lap) in data.Lines)
+        foreach (var (driverNumber, lapUpdate) in data.Lines)
         {
             // Super hacky way of doing a clean clone. Using AutoMapper seems to not clone the Sectors array properly.
             var cloned = JsonSerializer.Deserialize<TimingDataPoint.Driver>(
@@ -36,24 +36,25 @@ public class TimingDataProcessor(IMapper mapper) : IProcessor<TimingDataPoint>
             )!;
 
             // If this update changes the NumberOfLaps, then take a snapshot of that drivers data for that lap
-            if (lap.NumberOfLaps.HasValue)
+            if (lapUpdate.NumberOfLaps.HasValue)
             {
-                var lapDrivers = DriversByLap.GetValueOrDefault(lap.NumberOfLaps!.Value);
+                var lapDrivers = DriversByLap.GetValueOrDefault(lapUpdate.NumberOfLaps!.Value);
                 if (lapDrivers is null)
                 {
                     lapDrivers = [];
-                    DriversByLap.TryAdd(lap.NumberOfLaps!.Value, lapDrivers);
+                    DriversByLap.TryAdd(lapUpdate.NumberOfLaps!.Value, lapDrivers);
                 }
 
-                DriversByLap[lap.NumberOfLaps!.Value].TryAdd(driverNumber, cloned);
+                DriversByLap[lapUpdate.NumberOfLaps!.Value].TryAdd(driverNumber, cloned);
             }
 
-            if (!string.IsNullOrWhiteSpace(cloned.BestLapTime?.Value))
+            // This update contains a new best lap
+            if (!string.IsNullOrWhiteSpace(lapUpdate.BestLapTime?.Value))
             {
                 // Check for an existing best lap for this driver. If its faster, update it.
                 if (BestLaps.TryGetValue(driverNumber, out var existingBestLap))
                 {
-                    var newLapTimeSpan = cloned.BestLapTime?.ToTimeSpan();
+                    var newLapTimeSpan = lapUpdate.BestLapTime?.ToTimeSpan();
                     var existingBestLapTimeSpan = existingBestLap.BestLapTime.ToTimeSpan();
                     if (
                         newLapTimeSpan.HasValue
@@ -69,7 +70,9 @@ public class TimingDataProcessor(IMapper mapper) : IProcessor<TimingDataPoint>
                     BestLaps.TryAdd(driverNumber, cloned);
                 }
             }
-            else
+
+
+            if (string.IsNullOrWhiteSpace(cloned.BestLapTime?.Value))
             {
                 // If the BestLapTime is wiped, remove the entry
                 // This usually happens between qualifying sessions

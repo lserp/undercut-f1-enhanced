@@ -69,8 +69,7 @@ public class TimingTowerDisplay(
                 new TableColumn("Pit") { Width = 4, Alignment = Justify.Right },
                 new TableColumn("Tyre") { Width = 5, Alignment = Justify.Right },
                 new TableColumn(" Compare ") { Width = 9, Alignment = Justify.Right },
-                new TableColumn("Driver") { Width = 9 },
-                new TableColumn("") { Width = 1 }
+                new TableColumn("Driver") { Width = 9 }
             )
             .NoBorder()
             .NoSafeBorder()
@@ -112,7 +111,12 @@ public class TimingTowerDisplay(
             }
 
             table.AddRow(
-                DisplayUtils.DriverTag(driver, line, isComparisonLine),
+                DisplayUtils.DriverTag(
+                    driver,
+                    line,
+                    positionChange: positionChange,
+                    selected: isComparisonLine
+                ),
                 new Text(
                     $"{line.GapToLeader}".ToFixedWidth(8),
                     isComparisonLine ? DisplayUtils.STYLE_INVERT : DisplayUtils.STYLE_NORMAL
@@ -161,8 +165,7 @@ public class TimingTowerDisplay(
                     DisplayUtils.GetStyle(stint)
                 ),
                 DisplayUtils.GetGapBetweenLines(comparisonDataPoint.Value, line),
-                DisplayUtils.DriverTag(driver, line, isComparisonLine),
-                new Markup(GetPositionChangeMarkup(positionChange))
+                DisplayUtils.DriverTag(driver, line, selected: isComparisonLine)
             );
         }
 
@@ -334,14 +337,6 @@ public class TimingTowerDisplay(
         bestLap?.ToTimeSpan() == time?.ToTimeSpan()
             ? DisplayUtils.STYLE_BEST
             : DisplayUtils.STYLE_NORMAL;
-
-    private string GetPositionChangeMarkup(int? change) =>
-        change switch
-        {
-            < 0 => "[green]▲[/]",
-            > 0 => "[yellow]▼[/]",
-            _ => "",
-        };
 
     private IRenderable GetRaceControlPanel()
     {

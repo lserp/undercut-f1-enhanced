@@ -96,15 +96,14 @@ public sealed class ChampionshipStatsDisplay(
 
             var relative = prevTeam.PredictedPoints - data.PredictedPoints;
             var change = data.PredictedPoints - data.CurrentPoints;
-            var (color, indicator) = (data.PredictedPosition - data.CurrentPosition) switch
-            {
-                > 0 => (Color.Red, "▼"),
-                < 0 => (Color.Green, "▲"),
-                _ => (Color.White, string.Empty),
-            };
 
             table.AddRow(
-                new Text($"{data.PredictedPosition, 2}{indicator}", color),
+                new Markup(
+                    DisplayUtils.MarkedUpPositionIndicator(
+                        data.PredictedPosition,
+                        data.PredictedPosition - data.CurrentPosition
+                    )
+                ),
                 new Markup($"[#{driver.TeamColour ?? "000000"} bold]{teamName}[/]"),
                 new Text($"+{change:N0}"),
                 new Text($"{data.PredictedPoints:N0}"),

@@ -48,7 +48,7 @@ public class TimingService(
             {
                 try
                 {
-                    // Add a delay to the message timestamp,
+                    // Add the current configured delay to the message timestamp, to offset it,
                     // then figure out how long we have to wait for it to be the wall clock time
                     var timestampWithDelay = res.timestamp + dateTimeProvider.Delay;
                     var timeToWait = timestampWithDelay - DateTimeOffset.UtcNow;
@@ -278,7 +278,13 @@ public class TimingService(
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, "Failed to process data inside processor");
+                        Logger.LogError(
+                            ex,
+                            "Failed to send {Name}, data to processor: {ProcessorName}: {Json}",
+                            typeof(T).Name,
+                            x.InputType.Name,
+                            json.ToJsonString(_jsonSerializerOptions)
+                        );
                     }
                 });
         }
@@ -293,7 +299,7 @@ public class TimingService(
         }
     }
 
-    private JsonNode? ArrayToIndexedDictionary(JsonNode? node)
+    private static JsonNode? ArrayToIndexedDictionary(JsonNode? node)
     {
         if (node?.GetValueKind() == JsonValueKind.Array)
         {

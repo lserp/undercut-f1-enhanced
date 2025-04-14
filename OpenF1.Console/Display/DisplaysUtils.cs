@@ -23,6 +23,7 @@ public static class DisplayUtils
     public static IRenderable DriverTag(
         DriverListDataPoint.Driver driver,
         TimingDataPoint.Driver line,
+        int? positionChange = null,
         bool selected = false,
         Decoration decoration = Decoration.None
     )
@@ -48,7 +49,10 @@ public static class DisplayUtils
 
         lineStyle = lineStyle.Combine(new Style(decoration: decoration));
 
-        return new Markup($"{line.Line, 2} {MarkedUpDriverNumber(driver)}", lineStyle);
+        return new Markup(
+            $"{MarkedUpPositionIndicator(line.Line, positionChange)}{MarkedUpDriverNumber(driver)}",
+            lineStyle
+        );
     }
 
     public static string MarkedUpDriverNumber(DriverListDataPoint.Driver driver) =>
@@ -129,5 +133,16 @@ public static class DisplayUtils
         }
 
         return new Text("");
+    }
+
+    public static string MarkedUpPositionIndicator(int? position, int? change = null)
+    {
+        var (color, indicator) = change switch
+        {
+            > 0 => (Color.Red, "▼"),
+            < 0 => (Color.Green, "▲"),
+            _ => (Color.White, " "),
+        };
+        return $"[{color.ToMarkup()}]{position, 2}{indicator}[/]";
     }
 }
