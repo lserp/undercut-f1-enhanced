@@ -203,6 +203,8 @@ public class TimingHistoryDisplay(
             .Latest.Where(x => x.Key != "_kf") // Data quirk, dictionaries include _kf which obviously isn't a driver
             .ToDictionary(x => x.Key, _ => new List<double?>());
 
+        var fastestLap = default(TimeSpan);
+
         // Only use data from the last LAPS_IN_CHART laps
         foreach (
             var (lap, lines) in timingData
@@ -213,8 +215,8 @@ public class TimingHistoryDisplay(
         {
             // Discard laps slower than 105% of the fastest car on that lap
             // This should discard laps where cars pit, as those laps aren't very useful
-            var fastestLap =
-                lines.Min(x => x.Value.LastLapTime?.ToTimeSpan()) ?? TimeSpan.FromHours(1);
+            fastestLap =
+                lines.Min(x => x.Value.LastLapTime?.ToTimeSpan()) ?? TimeSpan.FromMinutes(2);
             var threshold = fastestLap * 1.05;
             foreach (var (driver, timingData) in lines)
             {
@@ -304,12 +306,14 @@ public class TimingHistoryDisplay(
             axisMin: 0
         );
         gapChart.DrawOnCanvas(canvas);
+
         var lapChart = CreateChart(
             lapSeries,
             "Lap Time",
             heightPixels / 2,
             widthPixels,
             labeler: v => TimeSpan.FromMilliseconds(v).ToString("mm':'ss"),
+            axisMax: fastestLap.TotalMilliseconds * 1.05,
             yMinStep: 1000
         );
         var lapChartImage = lapChart.GetImage();
@@ -345,6 +349,7 @@ public class TimingHistoryDisplay(
         int width,
         Func<double, string> labeler,
         double? axisMin = null,
+        double? axisMax = null,
         double yMinStep = 0
     )
     {
@@ -378,6 +383,7 @@ public class TimingHistoryDisplay(
                     SeparatorsPaint = new SolidColorPaint(SKColors.LightGray),
                     LabelsPaint = new SolidColorPaint(SKColors.LightGray),
                     MinLimit = axisMin,
+                    MaxLimit = axisMax,
                     Labeler = labeler,
                     MinStep = yMinStep,
                 },
