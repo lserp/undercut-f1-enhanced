@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackageId>undercutf1</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <AssemblyName>undercutf1</AssemblyName>
+    <ToolCommandName>undercutf1</ToolCommandName>
+    <PackAsTool>true</PackAsTool>
+    <IsPackable>true</IsPackable>
+    <PackageTags>formula1;formula-1;f1;livetiming;timing;tui;terminal-ui</PackageTags>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="InMemoryLogger" />
+    <PackageReference Include="LiveChartsCore" />
+    <PackageReference Include="LiveChartsCore.SkiaSharpView" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="NetCoreAudio" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="system.commandline" />
+    <PackageReference Include="TextCopy" />
+    <PackageReference Include="Vezel.Cathode" />
+    <PackageReference Include="Vezel.Cathode.Extensions" />
+  </ItemGroup>
+
+  <ItemGroup>
+		<ProjectReference Include="..\UndercutF1.Data\UndercutF1.Data.csproj" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="*.flf" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

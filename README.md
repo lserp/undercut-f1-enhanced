@@ -1,12 +1,12 @@
 <!-- omit in toc -->
-# open-f1
+# undercut-f1
 
-open-f1 is an open source F1 Live Timing client.
+undercut-f1 is an open source F1 Live Timing client.
 
-`openf1-console` is a TUI application which uses `OpenF1.Data` to show a Live Timing screen during sessions, and records the data for future session replays. 
+`undercutf1` is a TUI application which uses `UndercutF1.Data` to show a Live Timing screen during sessions, and records the data for future session replays.
 F1 live broadcasts are usually delayed by some undeterminable amount (usually 30-60 seconds), so the TUI allows you to delay the data being displayed so that you can match up what you see on your screen to what you see on your TV.
 
-The `OpenF1.Data` library is provided to facilitate connectivity with the F1 Live Timing data stream, and handle all the processing of the incoming data. It also allows for "simulated" streams, where previously recorded data streams can be played back to allow for easy development/testing.
+The `UndercutF1.Data` library is provided to facilitate connectivity with the F1 Live Timing data stream, and handle all the processing of the incoming data. It also allows for "simulated" streams, where previously recorded data streams can be played back to allow for easy development/testing.
 
 Feature Highlights:
 
@@ -29,7 +29,7 @@ Feature Highlights:
 ## Table of Contents
 
 - [Inspiration](#inspiration)
-- [OpenF1 Console in Action](#openf1-console-in-action)
+- [UndercutF1 in Action](#undercutf1-in-action)
   - [Timing Tower during a Race](#timing-tower-during-a-race)
   - [Using a Cursor to Display Relative Gap for a Specific Driver](#using-a-cursor-to-display-relative-gap-for-a-specific-driver)
   - [Timing Tower during Practice/Qualifying](#timing-tower-during-practicequalifying)
@@ -38,7 +38,7 @@ Feature Highlights:
   - [Tyre Stint / Strategy](#tyre-stint--strategy)
   - [Using a Cursor to View Timing History by Lap](#using-a-cursor-to-view-timing-history-by-lap)
   - [Listen to and Transcribe Team Radio](#listen-to-and-transcribe-team-radio)
-- [Getting Started with `openf1-console`](#getting-started-with-openf1-console)
+- [Getting Started with `undercutf1`](#getting-started-with-undercutf1)
   - [Installation](#installation)
     - [Install and run as a dotnet tool](#install-and-run-as-a-dotnet-tool)
     - [Install and run the standalone executable](#install-and-run-the-standalone-executable)
@@ -55,12 +55,11 @@ Feature Highlights:
 - [Data Recording and Replay](#data-recording-and-replay)
 - [Notice](#notice)
 
-
 ## Inspiration
 
 This project is heavily inspired by the [FastF1 project by theOehrly](https://github.com/theOehrly/Fast-F1). They did a lot of the work understanding the SignalR stream coming from the F1 Live Timing service. Visit their project if you'd like to do any sort of data analysis on past F1 events, or gather live timing data using their module.
 
-## OpenF1 Console in Action
+## UndercutF1 in Action
 
 ### Timing Tower during a Race
 
@@ -118,73 +117,75 @@ Listen to team radio clips from anytime in the session, and use a local ML model
 
 ![Listen to and Transcribe Team Radio](docs/screenshots/team-radio.png)
 
-## Getting Started with `openf1-console`
+## Getting Started with `undercutf1`
 
 ### Installation
 
 #### Install and run as a dotnet tool
 
-`openf1-console` is available as a `dotnet` tool from NuGet, which means it can be installed system-wide simply by running:
+`undercutf1` is available as a `dotnet` tool from NuGet, which means it can be installed system-wide simply by running:
 
 ```sh
 # Install globally using the -g flag
-dotnet tool install -g openf1-console
+dotnet tool install -g undercutf1
 
-# Assuming the dotnet tools directory is on your path, simply execute openf1-console
-openf1-console
+# Assuming the dotnet tools directory is on your path, simply execute undercutf1
+undercutf1
 ```
 
-This method is recommended as it is easy to keep the app updated using `dotnet tool update -g openf1-console`. You'll need the .NET 9 SDK installed to use this installation method. If you'd rather not install the SDK, try the [standalone installation option below](#install-and-run-the-standalone-executable).
+This method is recommended as it is easy to keep the app updated using `dotnet tool update -g undercutf1`. You'll need the .NET 9 SDK installed to use this installation method. If you'd rather not install the SDK, try the [standalone installation option below](#install-and-run-the-standalone-executable).
 
 #### Install and run the standalone executable
 
-Standalone executables are attached to each GitHub release. Download the executable for your system OS/architecture and simply run it directly. The list of artifacts are available on the [release page for the latest release](https://github.com/JustAman62/open-f1/releases/latest).
+Standalone executables are attached to each GitHub release. Download the executable for your system OS/architecture and simply run it directly. The list of artifacts are available on the [release page for the latest release](https://github.com/JustAman62/undercut-f1/releases/latest).
 
 ```sh
 # Download the latest executable (in this case for osx-arm64)
-curl https://github.com/JustAman62/open-f1/releases/latest/download/openf1-console-osx-arm64 -o ./openf1-console -L
+curl https://github.com/JustAman62/undercut-f1/releases/latest/download/undercutf1-osx-arm64 -o ./undercutf1 -L
 
-# Execute openf1-console to start the TUI
-./openf1-console
+# Execute undercutf1 to start the TUI
+./undercutf1
 ```
 
 #### Run directly from Source
 
 ```sh
 # Checkout the git repository
-git clone git@github.com:JustAman62/open-f1.git
-cd open-f1
+git clone git@github.com:JustAman62/undercut-f1.git
+cd undercut-f1
 
 # Run the console project with `dotnet run`
-dotnet run --project OpenF1.Console/OpenF1.Console.csproj
+dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj
 ```
 
-By default, data will be saved and read from the `~/open-f1` directory. See [Configuration](#configuration) for information on how to configure this.
+By default, data will be saved and read from the `~/undercut-f1` directory. See [Configuration](#configuration) for information on how to configure this.
 
 ### Start Timing for a Live Session
 
-1. Start `openf1-console` as described above
+1. Start `undercutf1` as described above
 2. Navigate to the <kbd>S</kbd> `Session` Screen
 3. Start a Live Session with the <kbd>L</kbd> `Start Live Session` action.
 4. Switch to the Timing Tower screen with the <kbd>T</kbd> `Timing Tower` action
 
-During the session, streamed timing data will be written to `~/open-f1/data/<session-name>`. This will allow for [future replays](#start-timing-for-a-pre-recorded-session) of this recorded data.
+During the session, streamed timing data will be written to `~/undercut-f1/data/<session-name>`. This will allow for [future replays](#start-timing-for-a-pre-recorded-session) of this recorded data.
 
 ### Start Timing for a Pre-recorded Session
 
-Data for pre-recorded sessions should be stored in the `~/open-f1/data/<session-name>` directory. Sample data can be found in this repos [Sample Data](/Sample%20Data/) folder. To use this sample data, copy one of the folders to `~/open-f1/data` and then it will be visible in step 4 below.
+Data for pre-recorded sessions should be stored in the `~/undercut-f1/data/<session-name>` directory. Sample data can be found in this repos [Sample Data](/Sample%20Data/) folder. To use this sample data, copy one of the folders to `~/undercut-f1/data` and then it will be visible in step 4 below.
 
-1. OPTIONAL: Download sample data to ~/open-f1/data. If you already have data, or have checked out the repository, skip to the next step.
+1. OPTIONAL: Download sample data to ~/undercut-f1/data. If you already have data, or have checked out the repository, skip to the next step.
+
     ```sh
     # Create the directory for the data if it doesn't exist
-    mkdir -p ~/open-f1/2024_Silverstone_Race
+    mkdir -p ~/undercut-f1/2024_Silverstone_Race
 
     # Download the live and subscribe data files
-    curl https://raw.githubusercontent.com/JustAman62/open-f1/refs/heads/master/Sample%20Data/2024_Silverstone_Race/live.txt -o ~/open-f1/2024_Silverstone_Race/live.txt
+    curl https://raw.githubusercontent.com/JustAman62/undercut-f1/refs/heads/master/Sample%20Data/2024_Silverstone_Race/live.txt -o ~/undercut-f1/2024_Silverstone_Race/live.txt
 
-    curl https://raw.githubusercontent.com/JustAman62/open-f1/refs/heads/master/Sample%20Data/2024_Silverstone_Race/subscribe.txt -o ~/open-f1/2024_Silverstone_Race/subscribe.txt
+    curl https://raw.githubusercontent.com/JustAman62/undercut-f1/refs/heads/master/Sample%20Data/2024_Silverstone_Race/subscribe.txt -o ~/undercut-f1/2024_Silverstone_Race/subscribe.txt
     ```
-2. Start `openf1-console` as described [above](#installation)
+
+2. Start `undercutf1` as described [above](#installation)
 3. Navigate to the <kbd>S</kbd> `Session` Screen
 4. Start a Simulated Session with the <kbd>F</kbd> `Start Simulation` action.
 5. Select the session to start using the Up/Down arrows, then pressing <kbd>Enter</kbd>
@@ -193,18 +194,18 @@ Data for pre-recorded sessions should be stored in the `~/open-f1/data/<session-
 
 ### Download a previous session data for replay
 
-F1 provides static timing data files for already completed sessions. This data can be downloaded and converted into the same format `openf1-console` uses to save live recorded data. You can then replay the old session using the steps above.
+F1 provides static timing data files for already completed sessions. This data can be downloaded and converted into the same format `undercutf1` uses to save live recorded data. You can then replay the old session using the steps above.
 
-1. List the meetings that have data available to import with `openf1-console import <year>`
-2. Review the list of meetings returned from the command, and list the available sessions inside the chosen meeting with `openf1-console import <year> --meeting-key <meeting-key>`
-3. Review the list of sessions, and select one to import: `openf1-console import <year> --meeting-key <meeting-key> --session-key <session-key>`
+1. List the meetings that have data available to import with `undercutf1 import <year>`
+2. Review the list of meetings returned from the command, and list the available sessions inside the chosen meeting with `undercutf1 import <year> --meeting-key <meeting-key>`
+3. Review the list of sessions, and select one to import: `undercutf1 import <year> --meeting-key <meeting-key> --session-key <session-key>`
 4. Data that is imported will be saved to the configured `DATA_DIRECTORY`. See [Configuration](#configuration) for information on how to change this.
 
 ### During the Session
 
 #### Managing Delay
 
-All session data, whether live or pre-recorded, is sent to a `Channel` that acts as a delayed-queue. After a short delay, data points are pulled from the queue and processed, leading to updates on the timing screens. The amount of this delay can be changed with the <kbd>M</kbd>/<kbd>N</kbd> `Delay` actions whilst on the timing screens. Hold <kbd>⇧ Shift</kbd> to change the delay by 30 seconds instead of 5. When using `openf1-console` during a live session, you may wish to increase this delay to around ~50 seconds (actual number may vary) to match with the broadcast delay and avoid being spoiled about upcoming action.
+All session data, whether live or pre-recorded, is sent to a `Channel` that acts as a delayed-queue. After a short delay, data points are pulled from the queue and processed, leading to updates on the timing screens. The amount of this delay can be changed with the <kbd>M</kbd>/<kbd>N</kbd> `Delay` actions whilst on the timing screens. Hold <kbd>⇧ Shift</kbd> to change the delay by 30 seconds instead of 5. When using `undercutf1` during a live session, you may wish to increase this delay to around ~50 seconds (actual number may vary) to match with the broadcast delay and avoid being spoiled about upcoming action.
 
 Simulated sessions start with a calculated delay equal to the amount of time between the start of the actual session and now. This means you can decrease the delay with the <kbd>N</kbd> `Delay` action to fast-forward through the session.
 
@@ -214,56 +215,57 @@ There is a global cursor that is controlled with the <kbd>▼</kbd>/<kbd>▲</kb
 
 ## Configuration
 
-OpenF1 can be configured using either a simple `config.json` file, through the command line at startup, or using environment variables. JSON configuration will be loaded from `~/open-f1/config.json`, if it exists.
+UndercutF1 can be configured using either a simple `config.json` file, through the command line at startup, or using environment variables. JSON configuration will be loaded from `~/undercut-f1/config.json`, if it exists.
 
-| JSON Path       | Command Line       | Environment Variable   | Description                                                                                                  |
-| --------------- | ------------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `dataDirectory` | `--data-directory` | `OPENF1_DATADIRECTORY` | The directory in which JSON timing data is read or written from.                                             |
-| `verbose`       | `-v\|--verbose`    | `OPENF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                      |
-| `apiEnabled`    | `--with-api`       | `OPENF1_APIENABLED`    | Whether the app should expose an API at http://localhost:61937. Default: `false`. Values: `true` or `false`. |
-| `notify`    | `--notify`       | `OPENF1_NOTIFY`    | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`. |
+| JSON Path       | Command Line       | Environment Variable       | Description                                                                                                                                        |
+| --------------- | ------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory in which JSON timing data is read or written from.                                                                                   |
+| `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                            |
+| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                       |
+| `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`. |
 
 ## Logging
 
-`OpenF1.Data` writes logs using the standard `ILogger` implementation. SignalR client logs are also passed to the standard `ILoggerProvider`. 
+`UndercutF1.Data` writes logs using the standard `ILogger` implementation. SignalR client logs are also passed to the standard `ILoggerProvider`.
 
-When running `openf1-console` logs are available in two places:
-* Logs are stored in memory and viewable the <kbd>L</kbd> `Logs` screen. Logs can be scrolled on this screen, and the minimum level of logs shown can be changed with the <kbd>M</kbd> `Minimum Log Level` action.
-* Log files are written to `~/open-f1/logs`.
+When running `undercutf1` logs are available in two places:
+
+- Logs are stored in memory and viewable the <kbd>L</kbd> `Logs` screen. Logs can be scrolled on this screen, and the minimum level of logs shown can be changed with the <kbd>M</kbd> `Minimum Log Level` action.
+- Log files are written to `~/undercut-f1/logs`.
 
 Default log level is set to `Information`. More verbose logging can be enabled with the [`verbose` config option](#configuration).
 
 ## Live Timing Data Source
 
-F1 live timing is streamed using `SignalR`. The `OpenF1.Data` simply connects to this endpoint, subscribes to the data feed, and listens for messages. It subscribes to the following "topics":
+F1 live timing is streamed using `SignalR`. The `UndercutF1.Data` simply connects to this endpoint, subscribes to the data feed, and listens for messages. It subscribes to the following "topics":
 
-* `Heartbeat`
-* `ExtrapolatedClock`
-* `TopThree`
-* `TimingStats`
-* `TimingAppData`
-* `WeatherData`
-* `TrackStatus`
-* `DriverList`
-* `RaceControlMessages`
-* `SessionInfo`
-* `SessionData`
-* `LapCount`
-* `TimingData`
-* `CarData.z`
-* `Position.z`
-* `ChampionshipPrediction`
-* `TeamRadio`
+- `Heartbeat`
+- `ExtrapolatedClock`
+- `TopThree`
+- `TimingStats`
+- `TimingAppData`
+- `WeatherData`
+- `TrackStatus`
+- `DriverList`
+- `RaceControlMessages`
+- `SessionInfo`
+- `SessionData`
+- `LapCount`
+- `TimingData`
+- `CarData.z`
+- `Position.z`
+- `ChampionshipPrediction`
+- `TeamRadio`
 
 ## Data Recording and Replay
 
-All events received by the live timing client will be written to the configured `Data Directory`, see [see Configuration for details](#configuration). Files will be written to a subdirectory named using the current sessions name, e.g. `~/open-f1/data/Jeddah_Race/`. In this directory, two files will be written: 
+All events received by the live timing client will be written to the configured `Data Directory`, see [see Configuration for details](#configuration). Files will be written to a subdirectory named using the current sessions name, e.g. `~/undercut-f1/data/Jeddah_Race/`. In this directory, two files will be written:
 
-* `subscribe.txt` contains the data received at subscription time (i.e. when the live timing client connected to the stream)
-* `live.txt` contains an append-log of every message received in the stream
+- `subscribe.txt` contains the data received at subscription time (i.e. when the live timing client connected to the stream)
+- `live.txt` contains an append-log of every message received in the stream
 
 Both of these files are required for future simulations/replays. The `IJsonTimingClient` supports loading these files and processing them in the same way live data would be. Data points will be replayed in real time, using an adjustable delay.
 
 ## Notice
 
-open-f1 is unofficial and are not associated in any way with the Formula 1 companies. F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, GRAND PRIX and related marks are trade marks of Formula One Licensing B.V.
+undercut-f1 is unofficial and are not associated in any way with the Formula 1 companies. F1, FORMULA ONE, FORMULA 1, FIA FORMULA ONE WORLD CHAMPIONSHIP, GRAND PRIX and related marks are trade marks of Formula One Licensing B.V.

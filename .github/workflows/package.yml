@@ -52,7 +52,7 @@ jobs:
       run: dotnet restore
 
     - name: Create ${{ matrix.target }} Package
-      run: dotnet publish -r ${{ matrix.target }} --self-contained true -p:PublishSingleFile=true -p:PublicRelease=true OpenF1.Console/OpenF1.Console.csproj -o ${{ matrix.target }}-output
+      run: dotnet publish -r ${{ matrix.target }} --self-contained true -p:PublishSingleFile=true -p:PublicRelease=true UndercutF1.Console/UndercutF1.Console.csproj -o ${{ matrix.target }}-output
     
     - name: Download codesign certificate
       if: contains(matrix.target, 'osx')
@@ -65,7 +65,7 @@ jobs:
       uses: indygreg/apple-code-sign-action@v1
       if: contains(matrix.target, 'osx')
       with:
-        input_path: ${{ matrix.target }}-output/openf1-console
+        input_path: ${{ matrix.target }}-output/undercutf1
         p12_file: certificate.p12
         p12_password: ${{ secrets.MAC_CODESIGN_PASSWORD }}
 
@@ -73,6 +73,6 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: ${{ matrix.target }}-output/${{ contains(matrix.target, 'win') && 'openf1-console.exe'  || 'openf1-console'}}
-        asset_name: openf1-console-${{ matrix.target }}${{ contains(matrix.target, 'win') && '.exe'  || ''}}
+        file: ${{ matrix.target }}-output/${{ contains(matrix.target, 'win') && 'undercutf1.exe'  || 'undercutf1'}}
+        asset_name: undercutf1-${{ matrix.target }}${{ contains(matrix.target, 'win') && '.exe'  || ''}}
         tag: ${{ github.ref }}
