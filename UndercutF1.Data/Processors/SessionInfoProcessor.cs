@@ -12,9 +12,7 @@ public class SessionInfoProcessor(IMapper mapper, ILogger<SessionInfoProcessor> 
     private Task? _loadCircuitTask = null;
     private JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
     {
-        NumberHandling =
-            JsonNumberHandling.AllowNamedFloatingPointLiterals
-            | JsonNumberHandling.AllowReadingFromString,
+        PropertyNameCaseInsensitive = true,
         Converters = { new IntJsonConverter() },
     };
 
@@ -52,6 +50,11 @@ public class SessionInfoProcessor(IMapper mapper, ILogger<SessionInfoProcessor> 
                 .GetFromJsonAsync<CircuitInfoResponse>(url, _jsonSerializerOptions)
                 .ConfigureAwait(false);
 
+            logger.LogDebug(
+                "Received circuit info from MultiViewer: {CircuitInfo}",
+                JsonSerializer.Serialize(circuitInfo, _jsonSerializerOptions)
+            );
+
             Latest.CircuitPoints = circuitInfo!.X.Zip(circuitInfo.Y).ToList();
             Latest.CircuitCorners = circuitInfo
                 .Corners.Select(x => (x.Number, x.TrackPosition.X, x.TrackPosition.Y))
@@ -78,8 +81,8 @@ public class SessionInfoProcessor(IMapper mapper, ILogger<SessionInfoProcessor> 
 
 /// <summary>
 /// A JsonConverter that handles ints that are formatted as floats (e.g. 1023.0).
-// If the value is a real float (e.g. 1023.04) then this converter will delegate
-// to <see cref="Utf8JsonReader.GetInt32()"/> which will throw a <see cref="JsonException"/>.
+/// If the value is a real float (e.g. 1023.04) then this converter will delegate
+/// to <see cref="Utf8JsonReader.GetInt32()"/> which will throw a <see cref="JsonException"/>.
 /// </summary>
 internal class IntJsonConverter : JsonConverter<int>
 {

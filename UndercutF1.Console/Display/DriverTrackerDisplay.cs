@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
-using UndercutF1.Data;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
@@ -222,7 +222,10 @@ public class DriverTrackerDisplay(
             return string.Empty;
         }
 
-        var imageScaleFactor = sessionInfo.Latest.CircuitPoints.Max(x => x.x) / 350;
+        var imageScaleFactor = Math.Max(
+            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.x)) / 350,
+            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.y)) / 350
+        );
 
         var circuitPoints = sessionInfo
             .Latest.CircuitPoints.Select(x =>
