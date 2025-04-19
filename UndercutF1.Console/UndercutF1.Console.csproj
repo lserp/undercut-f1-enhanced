@@ -10,6 +10,7 @@
     <IsPackable>true</IsPackable>
     <PackageTags>formula1;formula-1;f1;livetiming;timing;tui;terminal-ui</PackageTags>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
