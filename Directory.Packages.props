@@ -32,6 +32,8 @@
     <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageVersion Include="SkiaSharp" Version="2.88.9" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="2.88.9" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="2.88.9" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="2.88.9" />
     <PackageVersion Include="Spectre.Console" Version="0.48.0" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="system.commandline" Version="2.0.0-beta4.22272.1" />
