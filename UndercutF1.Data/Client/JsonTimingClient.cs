@@ -140,8 +140,8 @@ public class JsonTimingClient(
 
         var delay =
             sessionStart > firstHeartbeatDateTime
-                ? DateTimeOffset.UtcNow - sessionStart
-                : DateTimeOffset.UtcNow - firstHeartbeatDateTime;
+                ? DateTime.UtcNow - sessionStart
+                : DateTime.UtcNow - firstHeartbeatDateTime;
 
         logger.LogInformation(
             "Calculated a delay of {Delay} from the highest of (SessionStart: {SessionStart:s}, FirstHeartbeat: {FirstHeartbeat:s})",

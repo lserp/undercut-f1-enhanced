@@ -85,6 +85,13 @@ public class TimingService(
                     Logger.LogError(ex, "Failed to process data {Data}", res);
                 }
             }
+            else
+            {
+                // No items in the queue to read. Instead of immediately checking,
+                // throttle a bit to ensure we aren't wasting CPU time
+                await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
     }
 
