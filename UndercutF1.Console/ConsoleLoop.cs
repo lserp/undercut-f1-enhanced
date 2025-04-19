@@ -71,6 +71,14 @@ public class ConsoleLoop(
                 UpdateInputFooter(layout);
 
                 var output = AnsiConsole.Console.ToAnsi(layout).Replace("\n", "");
+                // For some reason ToAnsi doesn't use Environment.NewLine correctly.
+                // On Windows, it outputs only CR's and no LF, so only a single line ends up output in the terminal
+                // So now we manually deal with this
+                if (OperatingSystem.IsWindows())
+                {
+                    output = output.Replace("\r", Environment.NewLine);
+                }
+
                 if (_previousDraw != output)
                 {
                     await Terminal.OutAsync(output, cancellationToken);
@@ -164,10 +172,19 @@ public class ConsoleLoop(
         Array.Fill<byte>(inputBuffer, 0);
         try
         {
-            // wait for a very short amount of time to read input
-            var cts = new CancellationTokenSource(millisecondsDelay: 5);
+#pragma warning disable RS0030 // Do not use banned APIs
+            if (!System.Console.KeyAvailable)
+            {
+                // There is no input to read, so don't try to read it
+                // Using the System.Console API here instead of timing out the Terminal.ReadAsync call below
+                // Because there is a bug with Vezel.Cathode on Windows which causes lost bytes if you cancel a read
+                // See https://github.com/vezel-dev/cathode/issues/165
+                return;
+            }
+#pragma warning restore RS0030 // Do not use banned APIs
 
-            await Terminal.ReadAsync(inputBuffer, cts.Token);
+            await Terminal.ReadAsync(inputBuffer);
+            logger.LogDebug("Read in input: {Input}", string.Join(',', inputBuffer));
 
             if (TryParseRawInput(inputBuffer, out var keyChar, out var consoleKey))
             {
@@ -227,8 +244,9 @@ public class ConsoleLoop(
                 switch (bytes[2..])
                 {
                     // Keyboard strings
-                    // these are mappings from keyboard presses (like shift+arrow_)
+                    // these are mappings from keyboard presses (like shift+arrow)
                     case [49, ARG_SEP, 50, var key, ..]:
+                        // These will be treated as uppercase chars
                         keyChar = (char)key;
                         consoleKey = key switch
                         {
@@ -242,6 +260,27 @@ public class ConsoleLoop(
                         {
                             logger.LogInformation(
                                 "Unknown CSI keyboard string: {Seq}",
+                                string.Join('|', bytes[2..])
+                            );
+                            return false;
+                        }
+                        return true;
+                    // These are arrow keys on Windows (for some reason, different on mac/linux)
+                    case [var key, ..] when key >= 65 && key <= 68:
+                        // Don't set the keyChar, we want these to be considered lowercase
+                        keyChar = default;
+                        consoleKey = key switch
+                        {
+                            68 => ConsoleKey.LeftArrow,
+                            65 => ConsoleKey.UpArrow,
+                            66 => ConsoleKey.DownArrow,
+                            67 => ConsoleKey.RightArrow,
+                            _ => default,
+                        };
+                        if (consoleKey == default)
+                        {
+                            logger.LogInformation(
+                                "Unknown CSI keyboard string (direct): {Seq}",
                                 string.Join('|', bytes[2..])
                             );
                             return false;
