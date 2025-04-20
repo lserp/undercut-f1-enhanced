@@ -32,6 +32,7 @@ public class EscapeInputHandler(State state) : IInputHandler
         {
             Screen.Main => Screen.Shutdown,
             Screen.StartSimulatedSession => Screen.ManageSession,
+            Screen.DownloadTranscriptionModel => Screen.TeamRadio,
             _ => Screen.Main,
         };
 

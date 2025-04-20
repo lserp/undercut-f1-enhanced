@@ -15,4 +15,5 @@ public enum Screen
     TeamRadio,
     TyreStints,
     DebugData,
+    DownloadTranscriptionModel,
 }
