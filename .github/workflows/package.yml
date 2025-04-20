@@ -122,7 +122,7 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: justaman62/undercutf1:latest,justaman62/undercutf1:${{ steps.nbgv.outputs.Version }}
+          tags: justaman62/undercutf1:latest,justaman62/undercutf1:${{ steps.nbgv.outputs.SemVer2 }}
 
       - name: Build and push
         if: ${{ github.event_name == 'pull_request'}}
@@ -130,4 +130,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: justaman62/undercutf1:${{ steps.nbgv.outputs.Version }}
+          tags: justaman62/undercutf1:${{ steps.nbgv.outputs.SemVer2 }}
