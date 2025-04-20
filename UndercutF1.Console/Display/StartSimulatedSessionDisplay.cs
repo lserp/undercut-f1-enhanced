@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
-using UndercutF1.Data;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
@@ -45,7 +45,10 @@ public class StartSimulatedSessionDisplay(
         tables.Add(locationTable);
 
         var selected = displayOptions.SelectedLocation.GetValueOrDefault(state.CursorOffset);
-        var maxLocationLength = directories.Select(x => x.Key.Location.Length).Max();
+        var maxLocationLength = directories
+            .Select(x => x.Key.Location.Length)
+            .DefaultIfEmpty()
+            .Max();
 
         for (var i = Math.Max(selected - 3, 0); i < directories.Count; i++)
         {
@@ -133,14 +136,23 @@ public class StartSimulatedSessionDisplay(
             If you cannot see your directory here, ensure that it contains both a file named subscribe.txt and live.txt.
             The directory name must be of the form /<location>_<session-type>/ e.g. /Silverstone_Practice_1/
 
-            To change the data directory, set the UNDERCUTF1_DATADIRECTORY environment variable.
+            To change the data directory, set the UNDERCUTF1_DATADIRECTORY environment variable or pass in the --data-directory argument.
             Configured Directory: {options.Value.DataDirectory}
             """;
         var helperText = new Text(title);
 
+        var missingDirectoryText = new Markup(
+            $"""
+            [red]No data found in {options.Value.DataDirectory}.
+            You can try to import data using the [bold]undercutf1 import[/] command[/]
+            """
+        );
+
         var layout = new Layout("Root").SplitRows(
             new Layout("Title", helperText).Size(8),
-            new Layout("Tables", new Columns(tables).Collapse())
+            directories.Count > 0
+                ? new Layout("Tables", new Columns(tables).Collapse())
+                : new Layout("Missing", missingDirectoryText)
         );
 
         return Task.FromResult<IRenderable>(layout);
