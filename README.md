@@ -117,6 +117,10 @@ Charts on the right display how Gap to Leader and Lap Time for all selected driv
 
 Listen to team radio clips from anytime in the session, and use a local ML model (Whisper) to transcribe the audio on demand. Transcription accuracy is fairly low, depending on the that days audio quality and driver. Suggestions welcome for improving this!
 
+Audio playback prerequisites:
+
+- If on Linux, make sure you have `aplay` and `mpg123` installed. See [the NetCoreAudio Prerequisites for more details](https://github.com/mobiletechtracker/NetCoreAudio?tab=readme-ov-file#prerequisites)
+
 ![Listen to and Transcribe Team Radio](docs/screenshots/team-radio.png)
 
 ## Getting Started with `undercutf1`
