@@ -43,6 +43,7 @@ Feature Highlights:
     - [Install and run as a dotnet tool](#install-and-run-as-a-dotnet-tool)
     - [Install and run the standalone executable](#install-and-run-the-standalone-executable)
     - [Install and run using the docker image](#install-and-run-using-the-docker-image)
+      - [Known Issues with Docker](#known-issues-with-docker)
     - [Run directly from Source](#run-directly-from-source)
   - [Start Timing for a Live Session](#start-timing-for-a-live-session)
   - [Start Timing for a Pre-recorded Session](#start-timing-for-a-pre-recorded-session)
@@ -166,6 +167,10 @@ docker run -it -e TERM_PROGRAM -v $HOME/undercut-f1/data:/data justaman62/underc
 # for example:
 docker run -it -v $HOME/undercut-f1/data:/data justaman62/undercutf1 import 2025
 ```
+
+##### Known Issues with Docker
+
+- Audio playback of Team Radio may not work when using Docker. This is due to difficulties in using and routing the alsa audio, which I haven't managed to figure out yet.
 
 #### Run directly from Source
 
