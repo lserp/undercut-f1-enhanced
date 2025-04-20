@@ -25,8 +25,8 @@ public class MainDisplay() : IDisplay
 
             Once a session is started, navigate to the Timing Tower using [bold]T[/]
             Then use the Arrow Keys [bold]◄[/]/[bold]►[/] to switch between timing pages.
-            Use [bold]N[/]/[bold]M[/] to adjust the stream delay, and [bold]▲[/]/[bold]▼[/] keys to use the cursor.
-            Press Shift with these keys to adjust by a higher amount, and Control to adjust by a smaller amount.
+            Use [bold]N[/]/[bold]M[/]/[bold],[/]/[bold].[/] to adjust the stream delay, and [bold]▲[/]/[bold]▼[/] keys to use the cursor.
+            Press Shift with these keys to adjust by a higher amount.
 
             You can download old session data from Formula 1 by running:
             > undercutf1 import

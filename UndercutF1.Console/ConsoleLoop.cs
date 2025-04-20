@@ -328,17 +328,6 @@ public class ConsoleLoop(
             case [ESC, ..]:
                 logger.LogInformation("Unknown esc sequence: {Seq}", string.Join('|', bytes[1..]));
                 break;
-            case [13, ..]: // ^M key press
-                keyChar = 'n';
-                consoleKey = ConsoleKey.M;
-                modifiers = ConsoleModifiers.Control;
-                return true;
-            case [14, ..]: // ^N key press
-                keyChar = 'm';
-                consoleKey = ConsoleKey.N;
-                modifiers = ConsoleModifiers.Control;
-                return true;
-
             case [var key, ..]: // Just a normal key press
                 keyChar = (char)key;
                 consoleKey = (ConsoleKey)char.ToUpperInvariant(keyChar);
