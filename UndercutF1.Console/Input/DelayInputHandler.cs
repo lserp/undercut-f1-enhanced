@@ -16,7 +16,10 @@ public class DelayInputHandler(IDateTimeProvider dateTimeProvider) : IInputHandl
             Screen.TyreStints,
         ];
 
-    public ConsoleKey[] Keys => [ConsoleKey.N, ConsoleKey.M];
+    public ConsoleKey[] DisplayKeys => [ConsoleKey.N, ConsoleKey.M];
+    // PrintScreen keycode = 44 (actually comma)
+    // Delete keycode = 46 (actually period)
+    public ConsoleKey[] Keys => [ConsoleKey.N, ConsoleKey.M, ConsoleKey.PrintScreen, ConsoleKey.Delete];
 
     public string Description => "Delay";
 
@@ -29,11 +32,17 @@ public class DelayInputHandler(IDateTimeProvider dateTimeProvider) : IInputHandl
     {
         switch (consoleKeyInfo.Key)
         {
+            case ConsoleKey.N:
+                UpdateDelay(-1, consoleKeyInfo.Modifiers);
+                break;
             case ConsoleKey.M:
                 UpdateDelay(1, consoleKeyInfo.Modifiers);
                 break;
-            case ConsoleKey.N:
-                UpdateDelay(-1, consoleKeyInfo.Modifiers);
+            case ConsoleKey.PrintScreen:
+                UpdateDelay(-1, ConsoleModifiers.Control);
+                break;
+            case ConsoleKey.Delete:
+                UpdateDelay(1, ConsoleModifiers.Control);
                 break;
         }
 
