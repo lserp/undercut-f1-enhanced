@@ -10,7 +10,7 @@
             "args": [],
             "cwd": "${workspaceFolder}/UndercutF1.Console/",
             "stopAtEntry": false,
-            "console": "integratedTerminal"            
+            "console": "integratedTerminal"
         }
     ]
 }

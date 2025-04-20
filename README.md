@@ -156,8 +156,11 @@ If this is not provided, the application will only work for live sessions and yo
 
 If provided, the directory you are mapping must already exist, as the docker image will not have the required permissions to create it for you.
 
+If you are using Wezterm or iTerm as your terminal, you'll need to pass through the TERM_PROGRAM environment variable
+to make sure that your terminal graphics work correctly (e.g. driver tracker).
+
 ```sh
-docker run -it -v $HOME/undercut-f1/data:/data justaman62/undercutf1
+docker run -it -e TERM_PROGRAM -v $HOME/undercut-f1/data:/data justaman62/undercutf1
 
 # Arguments can still be passed to the executable as normal
 # for example:
