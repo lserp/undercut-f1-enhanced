@@ -70,10 +70,8 @@ public class ConsoleLoop(
 
                 UpdateInputFooter(layout);
 
+                // Windows terminals need to have CRLFs, whereas Linux wants no newlines at all
                 var output = AnsiConsole.Console.ToAnsi(layout).Replace("\n", "");
-                // For some reason ToAnsi doesn't use Environment.NewLine correctly.
-                // On Windows, it outputs only CR's and no LF, so only a single line ends up output in the terminal
-                // So now we manually deal with this
                 if (OperatingSystem.IsWindows())
                 {
                     output = output.Replace("\r", Environment.NewLine);
