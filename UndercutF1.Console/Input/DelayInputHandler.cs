@@ -2,9 +2,9 @@ using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public class IncreaseDelayInputHandler(IDateTimeProvider dateTimeProvider) : IInputHandler
+public class DelayInputHandler(IDateTimeProvider dateTimeProvider) : IInputHandler
 {
-    public bool IsEnabled => true;
+    public bool IsEnabled => !dateTimeProvider.IsPaused;
 
     public Screen[] ApplicableScreens =>
         [
@@ -27,17 +27,31 @@ public class IncreaseDelayInputHandler(IDateTimeProvider dateTimeProvider) : IIn
         CancellationToken cancellationToken = default
     )
     {
-        var changeBy = consoleKeyInfo.Key == ConsoleKey.M ? 5 : -5;
-        if (consoleKeyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+        switch (consoleKeyInfo.Key)
         {
-            changeBy *= 6;
+            case ConsoleKey.M:
+                UpdateDelay(1, consoleKeyInfo.Modifiers);
+                break;
+            case ConsoleKey.N:
+                UpdateDelay(-1, consoleKeyInfo.Modifiers);
+                break;
         }
 
-        dateTimeProvider.Delay += TimeSpan.FromSeconds(changeBy);
+        return Task.CompletedTask;
+    }
+
+    private void UpdateDelay(int direction, ConsoleModifiers modifiers)
+    {
+        var amount = modifiers switch
+        {
+            ConsoleModifiers.Shift => 30 * direction,
+            ConsoleModifiers.Control => 1 * direction,
+            _ => 5 * direction,
+        };
+
+        dateTimeProvider.Delay += TimeSpan.FromSeconds(amount);
 
         if (dateTimeProvider.Delay < TimeSpan.Zero)
             dateTimeProvider.Delay = TimeSpan.Zero;
-
-        return Task.CompletedTask;
     }
 }
