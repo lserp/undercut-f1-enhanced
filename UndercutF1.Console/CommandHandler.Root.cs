@@ -72,6 +72,27 @@ public static partial class CommandHandler
 
         app.Logger.LogDebug("Options: {Options}", options);
 
+        Whisper.net.Logger.LogProvider.AddLogger(
+            (level, msg) =>
+            {
+                switch (level)
+                {
+                    case Whisper.net.Logger.WhisperLogLevel.Error:
+                        app.Logger.LogError("Whisper: {Message}", msg);
+                        break;
+                    case Whisper.net.Logger.WhisperLogLevel.Warning:
+                        app.Logger.LogWarning("Whisper: {Message}", msg);
+                        break;
+                    case Whisper.net.Logger.WhisperLogLevel.Debug:
+                        app.Logger.LogDebug("Whisper: {Message}", msg);
+                        break;
+                    default:
+                        app.Logger.LogDebug("Whisper {Level}: {Message}", level, msg);
+                        break;
+                }
+            }
+        );
+
         await app.RunAsync();
     }
 }

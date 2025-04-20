@@ -18,8 +18,11 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Whisper.net" />
-    <!-- TODO: Consider conditionally using Whisper.net.Runtime.CoreML for improved Mac performance -->
     <PackageReference Include="Whisper.net.Runtime" />
+    <PackageReference Include="Whisper.net.Runtime.Cuda" />
+    <PackageReference Include="Whisper.net.Runtime.OpenVino" />
+    <PackageReference Include="Whisper.net.Runtime.NoAvx" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
   </ItemGroup>
 
   <ItemGroup>

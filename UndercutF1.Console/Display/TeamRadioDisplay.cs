@@ -56,14 +56,21 @@ public sealed class TeamRadioDisplay(
         };
     }
 
-    private IRenderable GetSelectedTranscription()
+    private Panel GetSelectedTranscription()
     {
         var selected = teamRadio.Ordered.ElementAtOrDefault(state.CursorOffset);
 
-        var text = string.IsNullOrWhiteSpace(selected.Value?.Transcription)
-            ? new Text("No transcription loaded. Press [T] to load.")
-            : new Text(selected.Value.Transcription);
+        var text = $"""
+            {selected.Value?.Transcription ?? "No transcription loaded. Press [T] to load."}
 
-        return new Panel(text) { Expand = true, Header = new PanelHeader("Transcription") };
+            Team Radio File Path: {selected.Value?.DownloadedFilePath
+                ?? "Play/Transcribe to download"}
+            """;
+
+        return new Panel(new Text(text))
+        {
+            Expand = true,
+            Header = new PanelHeader("Transcription"),
+        };
     }
 }

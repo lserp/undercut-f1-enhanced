@@ -6,6 +6,7 @@ namespace UndercutF1.Console;
 public sealed class TranscribeTeamRadioInputHandler(
     State state,
     TeamRadioProcessor teamRadio,
+    ITranscriptionProvider transcriptionProvider,
     ILogger<TranscribeTeamRadioInputHandler> logger
 ) : IInputHandler
 {
@@ -32,13 +33,19 @@ public sealed class TranscribeTeamRadioInputHandler(
         CancellationToken cancellationToken = default
     )
     {
+        if (!transcriptionProvider.IsModelDownloaded)
+        {
+            state.CurrentScreen = Screen.DownloadTranscriptionModel;
+            return Task.CompletedTask;
+        }
+
         switch (_task)
         {
             case { IsCompleted: false }:
                 logger.LogInformation("Asked to start transcribing, but already working");
                 break;
             default:
-                _task = Task.Run(() => TranscribeAsync(state.CursorOffset));
+                _task = Task.Run(() => TranscribeAsync(state.CursorOffset), cancellationToken);
                 break;
         }
         return Task.CompletedTask;
@@ -69,6 +76,7 @@ public sealed class TranscribeTeamRadioInputHandler(
                 Team Radio File Path: {radio.Value.DownloadedFilePath}
                 """;
             logger.LogError(ex, text);
+            radio.Value.Transcription = text;
         }
     }
 }

@@ -15,14 +15,16 @@ public class TranscriptionProvider(
     ILogger<TranscriptionProvider> logger
 ) : ITranscriptionProvider
 {
-    private string ModelPath => Path.Join(options.Value.DataDirectory, "models/ggml-base.bin");
+    public string ModelPath => Path.Join(options.Value.DataDirectory, "models/ggml-base.bin");
+
+    public bool IsModelDownloaded => File.Exists(ModelPath);
 
     public async Task<string> TranscribeFromFileAsync(
         string filePath,
         CancellationToken cancellationToken = default
     )
     {
-        await CheckModelInitialised().ConfigureAwait(false);
+        await EnsureModelDownloaded().ConfigureAwait(false);
         using var whisperFactory = WhisperFactory.FromPath(ModelPath);
 
         using var processor = whisperFactory.CreateBuilder().WithLanguage("auto").Build();
@@ -51,19 +53,25 @@ public class TranscriptionProvider(
         return text;
     }
 
-    private async Task CheckModelInitialised()
+    public async Task EnsureModelDownloaded()
     {
-        if (!File.Exists(ModelPath))
+        if (!IsModelDownloaded)
         {
-            logger.LogInformation("Whisper model not found at {}, so downloading it.", ModelPath);
+            logger.LogInformation(
+                "Whisper model not found at {ModelPath}, so downloading it.",
+                ModelPath
+            );
             Directory.CreateDirectory(Directory.GetParent(ModelPath)!.FullName);
-            using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(GgmlType.BaseEn);
+            using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(
+                GgmlType.BaseEn
+            );
+            ;
             using var fileWriter = File.OpenWrite(ModelPath);
             await modelStream.CopyToAsync(fileWriter);
         }
         else
         {
-            logger.LogDebug("Whisper model already exists at {}.", ModelPath);
+            logger.LogDebug("Whisper model already exists at {ModelPAth}.", ModelPath);
         }
     }
 }
