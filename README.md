@@ -42,6 +42,7 @@ Feature Highlights:
   - [Installation](#installation)
     - [Install and run as a dotnet tool](#install-and-run-as-a-dotnet-tool)
     - [Install and run the standalone executable](#install-and-run-the-standalone-executable)
+  - [Install and run using the docker image](#install-and-run-using-the-docker-image)
     - [Run directly from Source](#run-directly-from-source)
   - [Start Timing for a Live Session](#start-timing-for-a-live-session)
   - [Start Timing for a Pre-recorded Session](#start-timing-for-a-pre-recorded-session)
@@ -147,6 +148,22 @@ curl https://github.com/JustAman62/undercut-f1/releases/latest/download/undercut
 ./undercutf1
 ```
 
+### Install and run using the docker image
+
+Docker images are pushed to Dockerhub containing the executable.
+The image expects a volume to be mounted at `/data` to store/read session recordings.
+If this is not provided, the application will only work for live sessions and you'll lose recorded data.
+
+If provided, the directory you are mapping must already exist, as the docker image will not have the required permissions to create it for you.
+
+```sh
+docker run -it -v $HOME/undercut-f1/data:/data justaman62/undercutf1
+
+# Arguments can still be passed to the executable as normal
+# for example:
+docker run -it -v $HOME/undercut-f1/data:/data justaman62/undercutf1 import 2025
+```
+
 #### Run directly from Source
 
 ```sh
@@ -156,6 +173,9 @@ cd undercut-f1
 
 # Run the console project with `dotnet run`
 dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj
+
+# Arguments can be provided after the -- argument, for example
+dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj -- import 2025
 ```
 
 By default, data will be saved and read from the `~/undercut-f1` directory. See [Configuration](#configuration) for information on how to configure this.
@@ -221,7 +241,7 @@ UndercutF1 can be configured using either a simple `config.json` file, through t
 | --------------- | ------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory in which JSON timing data is read or written from.                                                                                   |
 | `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                            |
-| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                       |
+| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                     |
 | `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`. |
 
 ## Logging
