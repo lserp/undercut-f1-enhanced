@@ -30,22 +30,24 @@ public class DelayInputHandler(IDateTimeProvider dateTimeProvider) : IInputHandl
         switch (consoleKeyInfo.Key)
         {
             case ConsoleKey.M:
-                UpdateDelay(5, consoleKeyInfo.Modifiers);
+                UpdateDelay(1, consoleKeyInfo.Modifiers);
                 break;
             case ConsoleKey.N:
-                UpdateDelay(-5, consoleKeyInfo.Modifiers);
+                UpdateDelay(-1, consoleKeyInfo.Modifiers);
                 break;
         }
 
         return Task.CompletedTask;
     }
 
-    private void UpdateDelay(int amount, ConsoleModifiers modifiers)
+    private void UpdateDelay(int direction, ConsoleModifiers modifiers)
     {
-        if (modifiers.HasFlag(ConsoleModifiers.Shift))
+        var amount = modifiers switch
         {
-            amount *= 6;
-        }
+            ConsoleModifiers.Shift => 30 * direction,
+            ConsoleModifiers.Control => 1 * direction,
+            _ => 5 * direction,
+        };
 
         dateTimeProvider.Delay += TimeSpan.FromSeconds(amount);
 

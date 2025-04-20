@@ -186,7 +186,14 @@ public class ConsoleLoop(
             await Terminal.ReadAsync(inputBuffer);
             logger.LogDebug("Read in input: {Input}", string.Join(',', inputBuffer));
 
-            if (TryParseRawInput(inputBuffer, out var keyChar, out var consoleKey))
+            if (
+                TryParseRawInput(
+                    inputBuffer,
+                    out var keyChar,
+                    out var consoleKey,
+                    out var modifiers
+                )
+            )
             {
                 var tasks = inputHandlers
                     .Where(x =>
@@ -202,9 +209,9 @@ public class ConsoleLoop(
                             new ConsoleKeyInfo(
                                 keyChar,
                                 consoleKey,
-                                shift: char.IsUpper(keyChar),
+                                shift: modifiers.HasFlag(ConsoleModifiers.Shift),
                                 alt: false,
-                                control: false
+                                control: modifiers.HasFlag(ConsoleModifiers.Control)
                             ),
                             cancellationToken
                         )
@@ -236,7 +243,12 @@ public class ConsoleLoop(
     /// <c>null</c> if the input is not a simple character,
     /// and should be treated as an actual escape sequence.
     /// </returns>
-    private bool TryParseRawInput(byte[] bytes, out char keyChar, out ConsoleKey consoleKey)
+    private bool TryParseRawInput(
+        byte[] bytes,
+        out char keyChar,
+        out ConsoleKey consoleKey,
+        out ConsoleModifiers modifiers
+    )
     {
         switch (bytes)
         {
@@ -256,6 +268,7 @@ public class ConsoleLoop(
                             67 => ConsoleKey.RightArrow,
                             _ => default,
                         };
+                        modifiers = ConsoleModifiers.Shift;
                         if (consoleKey == default)
                         {
                             logger.LogInformation(
@@ -267,7 +280,6 @@ public class ConsoleLoop(
                         return true;
                     // These are arrow keys on Windows (for some reason, different on mac/linux)
                     case [var key, ..] when key >= 65 && key <= 68:
-                        // Don't set the keyChar, we want these to be considered lowercase
                         keyChar = default;
                         consoleKey = key switch
                         {
@@ -277,6 +289,7 @@ public class ConsoleLoop(
                             67 => ConsoleKey.RightArrow,
                             _ => default,
                         };
+                        modifiers = ConsoleModifiers.None;
                         if (consoleKey == default)
                         {
                             logger.LogInformation(
@@ -299,6 +312,7 @@ public class ConsoleLoop(
                     67 => ConsoleKey.RightArrow,
                     _ => default,
                 };
+                modifiers = ConsoleModifiers.None;
                 if (consoleKey == default)
                 {
                     logger.LogInformation(
@@ -311,13 +325,26 @@ public class ConsoleLoop(
             case [ESC, 0, ..]: // Just the escape key
                 keyChar = (char)ESC;
                 consoleKey = ConsoleKey.Escape;
+                modifiers = ConsoleModifiers.None;
                 return true;
             case [ESC, ..]:
                 logger.LogInformation("Unknown esc sequence: {Seq}", string.Join('|', bytes[1..]));
                 break;
+            case [13, ..]: // ^M key press
+                keyChar = 'n';
+                consoleKey = ConsoleKey.M;
+                modifiers = ConsoleModifiers.Control;
+                return true;
+            case [14, ..]: // ^N key press
+                keyChar = 'm';
+                consoleKey = ConsoleKey.N;
+                modifiers = ConsoleModifiers.Control;
+                return true;
+
             case [var key, ..]: // Just a normal key press
                 keyChar = (char)key;
                 consoleKey = (ConsoleKey)char.ToUpperInvariant(keyChar);
+                modifiers = char.IsUpper(keyChar) ? ConsoleModifiers.Shift : ConsoleModifiers.None;
                 return true;
             default:
                 logger.LogInformation("Unknown input: {Input}", string.Join('|', bytes));
@@ -325,6 +352,7 @@ public class ConsoleLoop(
         }
         keyChar = default;
         consoleKey = default;
+        modifiers = default;
         return false;
     }
 }
