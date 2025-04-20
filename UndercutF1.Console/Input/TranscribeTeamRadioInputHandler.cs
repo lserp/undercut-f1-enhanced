@@ -38,7 +38,7 @@ public sealed class TranscribeTeamRadioInputHandler(
                 logger.LogInformation("Asked to start transcribing, but already working");
                 break;
             default:
-                _task = Task.Run(() => TranscribeAsync(state.CursorOffset));
+                _task = Task.Run(() => TranscribeAsync(state.CursorOffset), cancellationToken);
                 break;
         }
         return Task.CompletedTask;
@@ -69,6 +69,7 @@ public sealed class TranscribeTeamRadioInputHandler(
                 Team Radio File Path: {radio.Value.DownloadedFilePath}
                 """;
             logger.LogError(ex, text);
+            radio.Value.Transcription = text;
         }
     }
 }
