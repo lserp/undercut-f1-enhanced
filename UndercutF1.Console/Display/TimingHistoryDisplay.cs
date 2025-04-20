@@ -329,14 +329,14 @@ public class TimingHistoryDisplay(
         var imageData = surface.Snapshot().Encode();
         var base64 = Convert.ToBase64String(imageData.AsSpan());
 
-        if (terminalInfo.IsITerm2ProtocolSupported.Value)
-        {
-            return TerminalGraphics.ITerm2GraphicsSequence(heightCells, widthCells, base64);
-        }
-        else if (terminalInfo.IsKittyProtocolSupported.Value)
+        if (terminalInfo.IsKittyProtocolSupported.Value)
         {
             return TerminalGraphics.KittyGraphicsSequenceDelete()
                 + TerminalGraphics.KittyGraphicsSequence(heightCells, widthCells, base64);
+        }
+        else if (terminalInfo.IsITerm2ProtocolSupported.Value)
+        {
+            return TerminalGraphics.ITerm2GraphicsSequence(heightCells, widthCells, base64);
         }
 
         return "Unexpected error, shouldn't have got here. Please report!";
