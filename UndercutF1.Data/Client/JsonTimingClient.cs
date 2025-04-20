@@ -52,28 +52,40 @@ public class JsonTimingClient(
         Dictionary<(string Location, DateOnly Date), List<(string Session, string Directory)>>
     > GetDirectoryNamesAsync()
     {
-        Directory.CreateDirectory(options.Value.DataDirectory);
-        var infoTasks = Directory
-            .GetDirectories(options.Value.DataDirectory)
-            .Where(x =>
-                Directory
-                    .GetFiles(x)
-                    .Any(x => x.EndsWith("live.txt", StringComparison.OrdinalIgnoreCase))
-                && Directory
-                    .GetFiles(x)
-                    .Any(x => x.EndsWith("subscribe.txt", StringComparison.OrdinalIgnoreCase))
-            )
-            .Select(ReadSessionInfoFromDirectoryAsync);
+        try
+        {
+            Directory.CreateDirectory(options.Value.DataDirectory);
+            var infoTasks = Directory
+                .GetDirectories(options.Value.DataDirectory)
+                .Where(x =>
+                    Directory
+                        .GetFiles(x)
+                        .Any(x => x.EndsWith("live.txt", StringComparison.OrdinalIgnoreCase))
+                    && Directory
+                        .GetFiles(x)
+                        .Any(x => x.EndsWith("subscribe.txt", StringComparison.OrdinalIgnoreCase))
+                )
+                .Select(ReadSessionInfoFromDirectoryAsync);
 
-        var infos = await Task.WhenAll(infoTasks);
-        return infos
-            .Where(x => x.HasValue)
-            .GroupBy(x => (x!.Value.Location, x.Value.Date))
-            .OrderByDescending(x => x.Key.Date)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Select(x => (x!.Value.Session, x.Value.Directory)).ToList()
+            var infos = await Task.WhenAll(infoTasks);
+            return infos
+                .Where(x => x.HasValue)
+                .GroupBy(x => (x!.Value.Location, x.Value.Date))
+                .OrderByDescending(x => x.Key.Date)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x.Select(x => (x!.Value.Session, x.Value.Directory)).ToList()
+                );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to create/read directory at {Directory}",
+                options.Value.DataDirectory
             );
+            return [];
+        }
     }
 
     /// <inheritdoc />
