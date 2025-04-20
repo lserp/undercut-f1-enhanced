@@ -42,7 +42,7 @@ Feature Highlights:
   - [Installation](#installation)
     - [Install and run as a dotnet tool](#install-and-run-as-a-dotnet-tool)
     - [Install and run the standalone executable](#install-and-run-the-standalone-executable)
-    - [Install and run using the docker image](#install-and-run-using-the-docker-image)
+    - [Run using the docker image](#run-using-the-docker-image)
       - [Known Issues with Docker](#known-issues-with-docker)
     - [Run directly from Source](#run-directly-from-source)
   - [Start Timing for a Live Session](#start-timing-for-a-live-session)
@@ -153,7 +153,7 @@ curl https://github.com/JustAman62/undercut-f1/releases/latest/download/undercut
 ./undercutf1
 ```
 
-#### Install and run using the docker image
+#### Run using the docker image
 
 Docker images are pushed to Dockerhub containing the executable.
 The image expects a volume to be mounted at `/data` to store/read session recordings.
