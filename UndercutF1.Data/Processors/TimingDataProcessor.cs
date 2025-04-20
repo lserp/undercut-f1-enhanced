@@ -71,7 +71,6 @@ public class TimingDataProcessor(IMapper mapper) : IProcessor<TimingDataPoint>
                 }
             }
 
-
             if (string.IsNullOrWhiteSpace(cloned.BestLapTime?.Value))
             {
                 // If the BestLapTime is wiped, remove the entry

@@ -4,10 +4,10 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using LiveChartsCore.SkiaSharpView.SKCharts;
 using LiveChartsCore.SkiaSharpView.VisualElements;
 using Microsoft.Extensions.Options;
-using UndercutF1.Data;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 

@@ -1,5 +1,5 @@
-using UndercutF1.Data;
 using Spectre.Console;
+using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 

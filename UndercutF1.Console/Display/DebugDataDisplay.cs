@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using UndercutF1.Data;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 

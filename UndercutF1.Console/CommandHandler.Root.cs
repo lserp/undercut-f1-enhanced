@@ -46,7 +46,10 @@ public static partial class CommandHandler
                         type.FullName!.Replace("UndercutF1.Data.", string.Empty)
                             .Replace("+", string.Empty)
                     );
-                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Undercut F1 API", Version = "v1" });
+                    c.SwaggerDoc(
+                        "v1",
+                        new OpenApiInfo { Title = "Undercut F1 API", Version = "v1" }
+                    );
                 });
         }
 

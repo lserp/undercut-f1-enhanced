@@ -1,7 +1,7 @@
-using UndercutF1.Console;
-using UndercutF1.Data;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Console;
+using UndercutF1.Data;
 
 public class ManageSessionDisplay(
     ITimingService timingService,

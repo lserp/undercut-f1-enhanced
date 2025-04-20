@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using UndercutF1.Data;
 using TextCopy;
+using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
