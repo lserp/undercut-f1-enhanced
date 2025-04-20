@@ -48,10 +48,7 @@ public class TimingService(
             {
                 try
                 {
-                    // Add the current configured delay to the message timestamp, to offset it,
-                    // then figure out how long we have to wait for it to be the wall clock time
-                    var timestampWithDelay = res.timestamp + dateTimeProvider.Delay;
-                    var timeToWait = timestampWithDelay - DateTimeOffset.UtcNow;
+                    var timeToWait = res.timestamp - dateTimeProvider.Utc;
                     if (timeToWait > TimeSpan.Zero)
                     {
                         if (timeToWait > TimeSpan.FromSeconds(1))
