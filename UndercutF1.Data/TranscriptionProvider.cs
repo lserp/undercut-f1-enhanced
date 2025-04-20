@@ -62,7 +62,10 @@ public class TranscriptionProvider(
                 ModelPath
             );
             Directory.CreateDirectory(Directory.GetParent(ModelPath)!.FullName);
-            using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(GgmlType.BaseEn);
+            using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(
+                GgmlType.BaseEn
+            );
+            ;
             using var fileWriter = File.OpenWrite(ModelPath);
             await modelStream.CopyToAsync(fileWriter);
         }
