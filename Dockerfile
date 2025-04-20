@@ -1,8 +1,9 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 
-# Required for SkiaSharp
-RUN apt-get update && apt-get install libfontconfig -y
+# libfontconfig required for SkiaSharp
+# ffmpeg libgdiplus required for ffmpeg
+RUN apt-get update && apt-get install libfontconfig ffmpeg libgdiplus -y
 
 
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0 AS build
