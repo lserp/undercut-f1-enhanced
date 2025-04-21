@@ -8,6 +8,8 @@ public record LiveTimingOptions
     public static string BaseDirectory =>
         Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "undercut-f1");
 
+    public static string ConfigFilePath => Path.Join(BaseDirectory, "config.json");
+
     /// <summary>
     /// The directory to read and store live timing data for simulations.
     /// When live sessions are being listened to, all data received will be recorded in this directory.

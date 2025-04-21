@@ -1,6 +1,7 @@
 ﻿using AutoMapper.EquivalencyExpression;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
 using UndercutF1.Data.AutoMapper;
 
 namespace UndercutF1.Data;
@@ -31,7 +32,17 @@ public static partial class ServiceCollectionExtensions
             .AddLiveTimingProcessors()
             .AddSingleton<INotifyService, NotifyService>()
             .AddSingleton<ITranscriptionProvider, TranscriptionProvider>()
-            .AddSingleton<IDataImporter, DataImporter>();
+            .AddSingleton<IDataImporter, DataImporter>()
+            .AddHttpClient(
+                "Default",
+                options =>
+                {
+                    options.DefaultRequestHeaders.Add(
+                        "User-Agent",
+                        $"undercut-f1/{ThisAssembly.AssemblyInformationalVersion}"
+                    );
+                }
+            );
 
         return collection;
     }

@@ -37,10 +37,7 @@ public static partial class CommandHandler
         }
 
         builder
-            .Configuration.AddJsonFile(
-                Path.Join(LiveTimingOptions.BaseDirectory, "config.json"),
-                optional: true
-            )
+            .Configuration.AddJsonFile(LiveTimingOptions.ConfigFilePath, optional: true)
             .AddEnvironmentVariables("UNDERCUTF1_")
             .AddInMemoryCollection(commandLineOpts);
 

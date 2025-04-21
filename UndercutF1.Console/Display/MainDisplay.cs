@@ -4,13 +4,16 @@ using Spectre.Console.Rendering;
 
 namespace UndercutF1.Console;
 
-public class MainDisplay() : IDisplay
+public class MainDisplay(IHttpClientFactory httpClientFactory, ILogger<MainDisplay> logger)
+    : IDisplay
 {
     public Screen Screen => Screen.Main;
 
     private readonly FigletFont _font = FigletFont.Load(
         Assembly.GetExecutingAssembly().GetManifestResourceStream("UndercutF1.Console.slant.flf")!
     );
+    private Task<string?>? _fetchVersionTask = null;
+    private string _currentVersion = $"v{ThisAssembly.NuGetPackageVersion}";
 
     public Task<IRenderable> GetContentAsync()
     {
@@ -29,14 +32,21 @@ public class MainDisplay() : IDisplay
             Press Shift with these keys to adjust by a higher amount.
 
             You can download old session data from Formula 1 by running:
-            > undercutf1 import
+            [italic]> undercutf1 import[/]
             """
         );
 
-        var footer = new Text(
+        var latestVersion = GetLatestVersion();
+
+        var newVersionText =
+            latestVersion == _currentVersion
+                ? string.Empty
+                : $"[green italic]A newer version is available: {latestVersion}[/]";
+
+        var footer = new Markup(
             $"""
             GitHub: https://github.com/JustAman62/undercut-f1
-            Version: {ThisAssembly.AssemblyInformationalVersion}
+            Version: {ThisAssembly.AssemblyInformationalVersion} {newVersionText}
             """
         );
 
@@ -49,4 +59,33 @@ public class MainDisplay() : IDisplay
 
         return Task.FromResult<IRenderable>(panel);
     }
+
+    private string GetLatestVersion()
+    {
+        // We don't want to block anything when fetching the latest version from GitHub
+        // So we trigger a background task to fetch, and return the current version until we have a result available.
+        switch (_fetchVersionTask)
+        {
+            case null:
+                _fetchVersionTask = Task.Run(GetLatestVersionAsync);
+                return _currentVersion;
+            case { IsCompletedSuccessfully: true }:
+                return _fetchVersionTask.Result ?? _currentVersion;
+            default:
+                return _currentVersion;
+        }
+    }
+
+    private async Task<string?> GetLatestVersionAsync()
+    {
+        var httpClient = httpClientFactory.CreateClient("Default");
+        var res = await httpClient.GetFromJsonAsync<GitHubTagEntry[]>(
+            "https://api.github.com/repos/justaman62/undercut-f1/tags"
+        );
+        var tag = res?.FirstOrDefault()?.Name;
+        logger.LogInformation("Latest tag from GitHub: {Tag}", tag);
+        return tag;
+    }
+
+    private record GitHubTagEntry(string Name);
 }

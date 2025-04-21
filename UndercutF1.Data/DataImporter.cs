@@ -7,8 +7,11 @@ using Microsoft.Extensions.Options;
 
 namespace UndercutF1.Data;
 
-public sealed class DataImporter(IOptions<LiveTimingOptions> options, ILogger<DataImporter> logger)
-    : IDataImporter
+public sealed class DataImporter(
+    IHttpClientFactory httpClientFactory,
+    IOptions<LiveTimingOptions> options,
+    ILogger<DataImporter> logger
+) : IDataImporter
 {
     private static readonly string[] _raceTopics =
     [
@@ -53,8 +56,7 @@ public sealed class DataImporter(IOptions<LiveTimingOptions> options, ILogger<Da
     /// <inheritdoc />
     public async Task<ListMeetingsApiResponse> GetMeetingsAsync(int year)
     {
-        // TODO: Get this HttpClient from DI IHttpClientFactory
-        var httpClient = new HttpClient();
+        var httpClient = httpClientFactory.CreateClient("Default");
         var url = $"https://livetiming.formula1.com/static/{year}/Index.json";
         return await httpClient.GetFromJsonAsync<ListMeetingsApiResponse>(url).ConfigureAwait(false)
             ?? throw new InvalidOperationException("An error occurred parsing the API response");
@@ -192,8 +194,7 @@ public sealed class DataImporter(IOptions<LiveTimingOptions> options, ILogger<Da
 
         try
         {
-            // TODO: Get this HttpClient from DI IHttpClientFactory
-            var httpClient = new HttpClient();
+            var httpClient = httpClientFactory.CreateClient("Default");
             var rawData = await httpClient.GetStringAsync(url).ConfigureAwait(false);
             var lines = rawData.Split('\n');
             return lines

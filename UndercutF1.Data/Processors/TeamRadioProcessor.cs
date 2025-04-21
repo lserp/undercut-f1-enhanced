@@ -5,6 +5,7 @@ namespace UndercutF1.Data;
 public class TeamRadioProcessor(
     SessionInfoProcessor sessionInfoProcessor,
     ITranscriptionProvider transcriptionProvider,
+    IHttpClientFactory httpClientFactory,
     IMapper mapper
 ) : ProcessorBase<TeamRadioDataPoint>(mapper)
 {
@@ -33,8 +34,7 @@ public class TeamRadioProcessor(
             $"https://livetiming.formula1.com/static/{sessionInfoProcessor.Latest.Path}{radio.Path}";
         var destFilePath = $"{Path.GetTempFileName()}.mp3";
 
-        // TODO: Use DI based HttpClients
-        using var httpClient = new HttpClient();
+        var httpClient = httpClientFactory.CreateClient("Default");
         var downloadStream = await httpClient
             .GetStreamAsync(downloadUri, cancellationToken)
             .ConfigureAwait(false);
