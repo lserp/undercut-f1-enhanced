@@ -245,12 +245,13 @@ There is a global cursor that is controlled with the <kbd>▼</kbd>/<kbd>▲</kb
 
 UndercutF1 can be configured using either a simple `config.json` file, through the command line at startup, or using environment variables. JSON configuration will be loaded from `~/undercut-f1/config.json`, if it exists.
 
-| JSON Path       | Command Line       | Environment Variable       | Description                                                                                                                                        |
-| --------------- | ------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory in which JSON timing data is read or written from.                                                                                   |
-| `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                            |
-| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                     |
-| `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`. |
+| JSON Path       | Command Line       | Environment Variable       | Description                                                                                                                                                              |
+| --------------- | ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription |
+| `logDirectory`  | `--log-directory`  | `UNDERCUTF1_LOGDIRECTORY`  | The directory to which logs are written to.                                                                                                                              |
+| `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                  |
+| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                           |
+| `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                       |
 
 ## Logging
 

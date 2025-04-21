@@ -10,11 +10,13 @@ public static partial class CommandHandler
         int? meetingKey,
         int? sessionKey,
         DirectoryInfo? dataDirectory,
+        DirectoryInfo? logDirectory,
         bool isVerbose
     )
     {
         var builder = GetBuilder(
             dataDirectory: dataDirectory,
+            logDirectory: logDirectory,
             isVerbose: isVerbose,
             useConsoleLogging: true
         );

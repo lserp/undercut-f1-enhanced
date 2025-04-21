@@ -19,6 +19,12 @@ public record LiveTimingOptions
     public string DataDirectory { get; set; } = Path.Join(BaseDirectory, "data");
 
     /// <summary>
+    /// The directory where logs will be output to.
+    /// Defaults to <c>~/undercut-f1/logs</c>
+    /// </summary>
+    public string LogDirectory { get; set; } = Path.Join(BaseDirectory, "logs");
+
+    /// <summary>
     /// Whether the app should expose an API at http://localhost:61937.
     /// Defaults to <c>false</c>.
     /// </summary>

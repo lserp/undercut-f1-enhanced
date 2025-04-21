@@ -19,7 +19,7 @@ public sealed class InfoDisplay(
         var content = $"""
             [bold]Configuration[/]
             [bold]Data Directory:[/]        {options.Value.DataDirectory}
-            [bold]Log Directory:[/]         {LiveTimingOptions.BaseDirectory}/logs
+            [bold]Log Directory:[/]         {options.Value.LogDirectory}
             [bold]Audible Notifications:[/] {options.Value.Notify}
             [bold]Verbose Mode:[/]          {options.Value.Verbose}
             [bold]Config Override File:[/]  {File.Exists(
