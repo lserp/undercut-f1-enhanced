@@ -52,6 +52,7 @@ Feature Highlights:
     - [Managing Delay](#managing-delay)
     - [Using the Cursor](#using-the-cursor)
 - [Configuration](#configuration)
+  - [Default Directories](#default-directories)
 - [Logging](#logging)
 - [Live Timing Data Source](#live-timing-data-source)
 - [Data Recording and Replay](#data-recording-and-replay)
@@ -190,8 +191,6 @@ dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj
 dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj -- import 2025
 ```
 
-By default, data will be saved and read from the `~/undercut-f1` directory. See [Configuration](#configuration) for information on how to configure this.
-
 ### Start Timing for a Live Session
 
 1. Start `undercutf1` as described above
@@ -199,13 +198,13 @@ By default, data will be saved and read from the `~/undercut-f1` directory. See 
 3. Start a Live Session with the <kbd>L</kbd> `Start Live Session` action.
 4. Switch to the Timing Tower screen with the <kbd>T</kbd> `Timing Tower` action
 
-During the session, streamed timing data will be written to `~/undercut-f1/data/<session-name>`. This will allow for [future replays](#start-timing-for-a-pre-recorded-session) of this recorded data.
+During the session, streamed timing data will be written to [the configured data directory](#default-directories). This will allow for [future replays](#start-timing-for-a-pre-recorded-session) of this recorded data.
 
 ### Start Timing for a Pre-recorded Session
 
-Data for pre-recorded sessions should be stored in the `~/undercut-f1/data/<session-name>` directory. Sample data can be found in this repos [Sample Data](/Sample%20Data/) folder. To use this sample data, copy one of the folders to `~/undercut-f1/data` and then it will be visible in step 4 below.
+Data for pre-recorded sessions should be stored in the `<data-directory>/<session-name>` directory. Sample data can be found in this repos [Sample Data](/Sample%20Data/) folder. To use this sample data, copy one of the folders to [the configured data directory](#default-directories) and then it will be visible in step 4 below.
 
-1. OPTIONAL: Download sample data to ~/undercut-f1/data. If you already have data, or have checked out the repository, skip to the next step.
+1. OPTIONAL: Download sample data to [the configured data directory](#default-directories). If you already have data, or have checked out the repository, skip to the next step.
 
     ```sh
     # Import data from the 2025 race in Suzuka
@@ -243,15 +242,30 @@ There is a global cursor that is controlled with the <kbd>▼</kbd>/<kbd>▲</kb
 
 ## Configuration
 
-UndercutF1 can be configured using either a simple `config.json` file, through the command line at startup, or using environment variables. JSON configuration will be loaded from `~/undercut-f1/config.json`, if it exists.
+UndercutF1 can be configured using either a simple `config.json` file, through the command line at startup, or using environment variables. JSON configuration will be loaded from [the appropriate config file path](#default-directories), if it exists.
 
-| JSON Path       | Command Line       | Environment Variable       | Description                                                                                                                                                              |
-| --------------- | ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription |
-| `logDirectory`  | `--log-directory`  | `UNDERCUTF1_LOGDIRECTORY`  | The directory to which logs are written to.                                                                                                                              |
-| `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                  |
-| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                           |
-| `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                       |
+To view what configuration is currently being used, open the <kbd>I</kbd> `Info` screen when the app starts up.
+
+| JSON Path       | Command Line       | Environment Variable       | Description                                                                                                                                                               |
+| --------------- | ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription. |
+| `logDirectory`  | `--log-directory`  | `UNDERCUTF1_LOGDIRECTORY`  | The directory to which logs are written to.                                                                                                                               |
+| `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                   |
+| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                            |
+| `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                        |
+
+### Default Directories
+
+UndercutF1 tries to adhere the Windows and XDG standards as much as possible. By default, timing data and logs are written/read at the following directories:
+
+| Type        | Windows                                | Linux/Mac                                  | Linux/Mac Fallback                  |
+| ----------- | -------------------------------------- | ------------------------------------------ | ----------------------------------- |
+| Config File | `$env:APPDATA/undercut-f1/config.json` | `$XDG_CONFIG_HOME/undercut-f1/config.json` | `~/.config/undercut-f1/config.json` |
+| Data        | `$env:LOCALAPPDATA/undercut-f1/data`   | `$XDG_DATA_HOME/undercut-f1/data`          | `~/.local/share/undercut-f1/data`   |
+| Logs        | `$env:LOCALAPPDATA/undercut-f1/logs`   | `$XDG_STATE_HOME/undercut-f1/logs`         | `~/.local/state/undercut-f1/logs`   |
+
+Data and Logs paths can be configured as [described above](#configuration). 
+The config file location cannot be modified, and will always be read from the above location.
 
 ## Logging
 
@@ -260,7 +274,7 @@ UndercutF1 can be configured using either a simple `config.json` file, through t
 When running `undercutf1` logs are available in two places:
 
 - Logs are stored in memory and viewable the <kbd>L</kbd> `Logs` screen. Logs can be scrolled on this screen, and the minimum level of logs shown can be changed with the <kbd>M</kbd> `Minimum Log Level` action.
-- Log files are written to `~/undercut-f1/logs`.
+- Log files are written to the [configured log directory](#default-directories).
 
 Default log level is set to `Information`. More verbose logging can be enabled with the [`verbose` config option](#configuration).
 
@@ -289,7 +303,7 @@ F1 live timing is streamed using `SignalR`. The `UndercutF1.Data` simply connect
 
 ## Data Recording and Replay
 
-All events received by the live timing client will be written to the configured `Data Directory`, see [see Configuration for details](#configuration). Files will be written to a subdirectory named using the current sessions name, e.g. `~/undercut-f1/data/Jeddah_Race/`. In this directory, two files will be written:
+All events received by the live timing client will be written to the configured `Data Directory`, see [see Configuration for details](#configuration). Files will be written to a subdirectory named using the current sessions name, e.g. `<data-directory>/Jeddah_Race/`. In this directory, two files will be written:
 
 - `subscribe.txt` contains the data received at subscription time (i.e. when the live timing client connected to the stream)
 - `live.txt` contains an append-log of every message received in the stream
