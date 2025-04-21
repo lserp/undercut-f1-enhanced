@@ -208,21 +208,15 @@ Data for pre-recorded sessions should be stored in the `~/undercut-f1/data/<sess
 1. OPTIONAL: Download sample data to ~/undercut-f1/data. If you already have data, or have checked out the repository, skip to the next step.
 
     ```sh
-    # Create the directory for the data if it doesn't exist
-    mkdir -p ~/undercut-f1/2024_Silverstone_Race
-
-    # Download the live and subscribe data files
-    curl https://raw.githubusercontent.com/JustAman62/undercut-f1/refs/heads/master/Sample%20Data/2024_Silverstone_Race/live.txt -o ~/undercut-f1/2024_Silverstone_Race/live.txt
-
-    curl https://raw.githubusercontent.com/JustAman62/undercut-f1/refs/heads/master/Sample%20Data/2024_Silverstone_Race/subscribe.txt -o ~/undercut-f1/2024_Silverstone_Race/subscribe.txt
+    # Import data from the 2025 race in Suzuka
+    undercutf1 import 2025 --meeting-key 1256 --session-key 10006
     ```
 
 2. Start `undercutf1` as described [above](#installation)
 3. Navigate to the <kbd>S</kbd> `Session` Screen
 4. Start a Simulated Session with the <kbd>F</kbd> `Start Simulation` action.
 5. Select the session to start using the Up/Down arrows, then pressing <kbd>Enter</kbd>
-6. Switch to the Timing Tower screen with the <kbd>T</kbd> `Timing Tower` action
-7. Optionally skip forward in time a bit by decreasing the delay with <kbd>N</kbd> (or <kbd>⇧ Shift</kbd> + <kbd>N</kbd> to decrease by 30 seconds).
+6. Skip forward in time a bit by decreasing the delay with <kbd>N</kbd> (or <kbd>⇧ Shift</kbd> + <kbd>N</kbd> to decrease by 30 seconds).
 
 ### Download a previous session data for replay
 
@@ -231,19 +225,21 @@ F1 provides static timing data files for already completed sessions. This data c
 1. List the meetings that have data available to import with `undercutf1 import <year>`
 2. Review the list of meetings returned from the command, and list the available sessions inside the chosen meeting with `undercutf1 import <year> --meeting-key <meeting-key>`
 3. Review the list of sessions, and select one to import: `undercutf1 import <year> --meeting-key <meeting-key> --session-key <session-key>`
-4. Data that is imported will be saved to the configured `DATA_DIRECTORY`. See [Configuration](#configuration) for information on how to change this.
+4. Data that is imported will be saved to the configured data directory. See [Configuration](#configuration) for information on how to change this.
 
 ### During the Session
 
 #### Managing Delay
 
-All session data, whether live or pre-recorded, is sent to a `Channel` that acts as a delayed-queue. After a short delay, data points are pulled from the queue and processed, leading to updates on the timing screens. The amount of this delay can be changed with the <kbd>M</kbd>/<kbd>N</kbd> `Delay` actions whilst on the timing screens. Hold <kbd>⇧ Shift</kbd> to change the delay by 30 seconds instead of 5. Use the <kbd>,</kbd>/<kbd>.</kbd> keys to change by 1 second. When using `undercutf1` during a live session, you may wish to increase this delay to around ~50 seconds (actual number may vary) to match with the broadcast delay and avoid being spoiled about upcoming action.
+All session data, whether live or pre-recorded, is sent to a `Channel` that acts as a delayed-queue. After your currently configured delay delay, data points are pulled from the queue and processed, leading to updates on the timing screens. The amount of this delay can be changed with the <kbd>M</kbd>/<kbd>N</kbd> `Delay` actions whilst on the timing screens. Hold <kbd>⇧ Shift</kbd> to change the delay by 30 seconds instead of 5. Use the <kbd>,</kbd>/<kbd>.</kbd> keys to change by 1 second. When using `undercutf1` during a live session, you may wish to increase this delay to around ~50 seconds (actual number may vary) to match with the broadcast delay and avoid being spoiled about upcoming action.
 
 Simulated sessions start with a calculated delay equal to the amount of time between the start of the actual session and now. This means you can decrease the delay with the <kbd>N</kbd> `Delay` action to fast-forward through the session.
 
+Data processing, and therefore the "session clock" can be paused using the <kbd>P</kbd> `Pause Clock` action. This allows you to easily synchronize prerecorded sessions by pausing the session in UndercutF1, then resuming at the perfect time when, for example, the formation lap starts.
+
 #### Using the Cursor
 
-There is a global cursor that is controlled with the <kbd>▼</kbd>/<kbd>▲</kbd> `Cursor` actions. What this cursor does depends on the screen, for example is can be used in the Timing Tower screen to scroll through Race Control Messages, or to select a driver on the Tower to see comparative intervals.
+There is a global cursor that is controlled with the <kbd>▼</kbd>/<kbd>▲</kbd> `Cursor` actions. What this cursor does depends on the screen, for example is can be used in the Timing Tower screen to scroll through Race Control Messages, or to select a driver on the Tower to see comparative intervals. Hold the <kbd>⇧ Shift</kbd> key to move the cursor by five positions instead of one.
 
 ## Configuration
 
@@ -288,6 +284,7 @@ F1 live timing is streamed using `SignalR`. The `UndercutF1.Data` simply connect
 - `Position.z`
 - `ChampionshipPrediction`
 - `TeamRadio`
+- `TyreStintSeries`
 
 ## Data Recording and Replay
 
