@@ -203,23 +203,42 @@ public class ConsoleLoop(
                         )
                     )
                     .Select(x =>
-                        x.ExecuteAsync(
-                            new ConsoleKeyInfo(
-                                keyChar,
+                    {
+                        try
+                        {
+                            return x.ExecuteAsync(
+                                new ConsoleKeyInfo(
+                                    keyChar,
+                                    consoleKey,
+                                    shift: modifiers.HasFlag(ConsoleModifiers.Shift),
+                                    alt: false,
+                                    control: modifiers.HasFlag(ConsoleModifiers.Control)
+                                ),
+                                cancellationToken
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(
+                                ex,
+                                "Failed to handle input {Key} for {Name}",
                                 consoleKey,
-                                shift: modifiers.HasFlag(ConsoleModifiers.Shift),
-                                alt: false,
-                                control: modifiers.HasFlag(ConsoleModifiers.Control)
-                            ),
-                            cancellationToken
-                        )
-                    );
+                                x.Description
+                            );
+                            return Task.CompletedTask;
+                        }
+                    });
                 await Task.WhenAll(tasks);
             }
         }
         catch (OperationCanceledException)
         {
             // No input to read, so skip
+            return;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to handle input");
             return;
         }
         finally
