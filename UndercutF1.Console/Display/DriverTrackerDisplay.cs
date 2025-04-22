@@ -17,12 +17,11 @@ public class DriverTrackerDisplay(
     ExtrapolatedClockProcessor extrapolatedClock,
     IDateTimeProvider dateTimeProvider,
     TerminalInfoProvider terminalInfo,
-    IOptions<LiveTimingOptions> options,
-    ILogger<DriverTrackerDisplay> logger
+    IOptions<LiveTimingOptions> options
 ) : IDisplay
 {
     private const int IMAGE_PADDING = 25;
-    private const int TARGET_IMAGE_SIZE = 600;
+    private const int TARGET_IMAGE_SIZE = 650;
     private const int LEFT_OFFSET = 17;
     private const int TOP_OFFSET = 0;
     private const int BOTTOM_OFFSET = 1;
@@ -55,6 +54,8 @@ public class DriverTrackerDisplay(
         width: SKFontStyleWidth.Normal,
         slant: SKFontStyleSlant.Upright
     );
+
+    private TransformFactors? _transform = null;
 
     private string _trackMapControlSequence = string.Empty;
 
@@ -223,32 +224,16 @@ public class DriverTrackerDisplay(
             return string.Empty;
         }
 
-        var imageScaleFactor = Math.Max(
-            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.x)) / TARGET_IMAGE_SIZE,
-            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.y)) / TARGET_IMAGE_SIZE
-        );
-
-        var circuitPoints = sessionInfo.Latest.CircuitPoints.Select(x =>
-            (x: x.x / imageScaleFactor, y: x.y / imageScaleFactor)
-        );
-
-        var minX = Math.Abs(circuitPoints.Min(x => x.x)) + IMAGE_PADDING;
-        var minY = Math.Abs(circuitPoints.Min(x => x.y)) + IMAGE_PADDING;
-
-        // Offset the coords to make them all > 0
-        circuitPoints = circuitPoints.Select(x => (x.x + minX, x.y + minY));
-
-        var maxX = circuitPoints.Max(x => x.x) + IMAGE_PADDING;
-        var maxY = circuitPoints.Max(x => x.y) + IMAGE_PADDING;
-
-        // Invert the Y coords due to compensate for map coordinates vs image coordinates
-        circuitPoints = circuitPoints.Select(x => (x.x, maxY - x.y));
+        _transform ??= GetTransformFactors();
 
         // Draw the image as a square that fits the actual track map in
-        var longestEdgeLength = Math.Max(maxX, maxY);
+        var longestEdgeLength = Math.Max(_transform.MaxX, _transform.MaxY);
         var surface = SKSurface.Create(new SKImageInfo(longestEdgeLength, longestEdgeLength));
         var canvas = surface.Canvas;
 
+        var circuitPoints = sessionInfo.Latest.CircuitPoints.Select(x =>
+            TransformPoint(x, _transform)
+        );
         // Draw lines between all the points of the track to create the track map
         _ = circuitPoints.Aggregate(
             (a, b) =>
@@ -258,11 +243,11 @@ public class DriverTrackerDisplay(
             }
         );
 
-        var circuitCorners = sessionInfo
-            .Latest.CircuitCorners.Select(x =>
-                (x.number, x: x.x / imageScaleFactor, y: x.y / imageScaleFactor)
-            )
-            .Select(x => (x.number, x: x.x + minX, y: maxY - (x.y + minY)));
+        var circuitCorners = sessionInfo.Latest.CircuitCorners.Select(p =>
+        {
+            var (x, y) = TransformPoint(((int)p.x, (int)p.y), _transform);
+            return (p.number, x, y);
+        });
 
         foreach (var (number, x, y) in circuitCorners)
         {
@@ -280,8 +265,10 @@ public class DriverTrackerDisplay(
             {
                 if (state.SelectedDrivers.Contains(driverNumber))
                 {
-                    var x = (position.X.Value / imageScaleFactor) + minX;
-                    var y = maxY - ((position.Y.Value / imageScaleFactor) + minY);
+                    var (x, y) = TransformPoint(
+                        (x: position.X.Value, y: position.Y.Value),
+                        _transform
+                    );
                     var paint = new SKPaint
                     {
                         Color = SKColor.Parse(data.TeamColour),
@@ -297,12 +284,7 @@ public class DriverTrackerDisplay(
                     }
 
                     canvas.DrawCircle(x, y, 5, paint);
-                    canvas.DrawText(
-                        data.Tla,
-                        (position.X.Value / imageScaleFactor) + minX + 8,
-                        maxY - ((position.Y.Value / imageScaleFactor) + minY) + 6,
-                        paint
-                    );
+                    canvas.DrawText(data.Tla, x + 8, y + 6, paint);
                 }
             }
         }
@@ -343,8 +325,8 @@ public class DriverTrackerDisplay(
                 80,
                 _errorPaint
             );
-            canvas.DrawText($"Image Scale factor: {imageScaleFactor}", 5, 100, _errorPaint);
-            canvas.DrawText($"Image H/W: {maxY}/{maxX}", 5, 120, _errorPaint);
+            canvas.DrawText($"Image Scale factor: {_transform.ScaleFactor}", 5, 100, _errorPaint);
+            canvas.DrawText($"Tranforms: {_transform}", 5, 120, _errorPaint);
         }
 
         var imageData = surface.Snapshot().Encode();
@@ -363,10 +345,44 @@ public class DriverTrackerDisplay(
         return "Unexpected error, shouldn't have got here. Please report!";
     }
 
+    private TransformFactors GetTransformFactors()
+    {
+        var circuitPoints = sessionInfo.Latest.CircuitPoints;
+
+        // Shift all points in to positive coordinates
+        var minX = circuitPoints.Min(x => x.x);
+        var minY = circuitPoints.Min(x => x.y);
+
+        circuitPoints = circuitPoints.Select(p => (x: p.x - minX, y: p.y - minY)).ToList();
+
+        var maxX = circuitPoints.Max(x => x.x);
+        var maxY = circuitPoints.Max(x => x.y);
+        var imageScaleFactor = Math.Max(maxX / TARGET_IMAGE_SIZE, maxY / TARGET_IMAGE_SIZE);
+
+        return new(
+            ScaleFactor: imageScaleFactor,
+            ShiftX: minX - IMAGE_PADDING,
+            ShiftY: minY - IMAGE_PADDING,
+            MaxX: (maxX / imageScaleFactor) + (IMAGE_PADDING * 2),
+            MaxY: (maxY / imageScaleFactor) + (IMAGE_PADDING * 2)
+        );
+    }
+
+    private (int x, int y) TransformPoint((int x, int y) point, TransformFactors transform)
+    {
+        var (x, y) = point;
+        x = ((x - transform.ShiftX) / transform.ScaleFactor) + IMAGE_PADDING;
+        // Invert the y to account for map coordinate vs image coordinate difference
+        y = transform.MaxY - ((y - transform.ShiftY) / transform.ScaleFactor) - IMAGE_PADDING;
+        return (x, y);
+    }
+
     /// <inheritdoc />
     public async Task PostContentDrawAsync()
     {
         await Terminal.OutAsync(ControlSequences.MoveCursorTo(TOP_OFFSET, LEFT_OFFSET));
         await Terminal.OutAsync(_trackMapControlSequence);
     }
+
+    private record TransformFactors(int ScaleFactor, int ShiftX, int ShiftY, int MaxX, int MaxY);
 }
