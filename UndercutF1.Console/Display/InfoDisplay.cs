@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
@@ -33,6 +34,9 @@ public sealed class InfoDisplay(
             [bold]iTerm2 Supported:[/]    {terminalInfo.IsITerm2ProtocolSupported.Value}
             [bold]Synchronized Output:[/] {terminalInfo.IsSynchronizedOutputSupported.Value}
             [bold]Version:[/]             {ThisAssembly.AssemblyInformationalVersion}
+            [bold]Runtime Identifier:[/]  {RuntimeInformation.RuntimeIdentifier}
+            
+            [bold]OS:[/] {RuntimeInformation.OSDescription}
             """;
 
         return Task.FromResult<IRenderable>(new Panel(new Markup(content)).Expand());
