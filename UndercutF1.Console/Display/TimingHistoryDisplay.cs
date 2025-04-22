@@ -49,7 +49,7 @@ public class TimingHistoryDisplay(
         slant: SKFontStyleSlant.Upright
     );
 
-    private string _chartPanelControlSequence = string.Empty;
+    private string[] _chartPanelControlSequence = [];
 
     public Task<IRenderable> GetContentAsync()
     {
@@ -66,7 +66,10 @@ public class TimingHistoryDisplay(
     public async Task PostContentDrawAsync()
     {
         await Terminal.OutAsync(ControlSequences.MoveCursorTo(0, LEFT_OFFSET));
-        await Terminal.OutAsync(_chartPanelControlSequence);
+        foreach (var sequence in _chartPanelControlSequence)
+        {
+            await Terminal.OutAsync(sequence);
+        }
     }
 
     private IRenderable GetTimingTower()
@@ -171,19 +174,19 @@ public class TimingHistoryDisplay(
         return _normal;
     }
 
-    private string GetChartPanel()
+    private string[] GetChartPanel()
     {
         if (
             !terminalInfo.IsITerm2ProtocolSupported.Value
             && !terminalInfo.IsKittyProtocolSupported.Value
         )
         {
-            return string.Empty;
+            return [];
         }
 
         if (!sessionInfo.Latest.IsRace())
         {
-            return string.Empty;
+            return [];
         }
 
         var widthCells = Terminal.Size.Width - LEFT_OFFSET;
@@ -331,15 +334,18 @@ public class TimingHistoryDisplay(
 
         if (terminalInfo.IsKittyProtocolSupported.Value)
         {
-            return TerminalGraphics.KittyGraphicsSequenceDelete()
-                + TerminalGraphics.KittyGraphicsSequence(heightCells, widthCells, base64);
+            return
+            [
+                TerminalGraphics.KittyGraphicsSequenceDelete(),
+                .. TerminalGraphics.KittyGraphicsSequence(heightCells, widthCells, base64),
+            ];
         }
         else if (terminalInfo.IsITerm2ProtocolSupported.Value)
         {
-            return TerminalGraphics.ITerm2GraphicsSequence(heightCells, widthCells, base64);
+            return [TerminalGraphics.ITerm2GraphicsSequence(heightCells, widthCells, base64)];
         }
 
-        return "Unexpected error, shouldn't have got here. Please report!";
+        return ["Unexpected error, shouldn't have got here. Please report!"];
     }
 
     private SKCartesianChart CreateChart(

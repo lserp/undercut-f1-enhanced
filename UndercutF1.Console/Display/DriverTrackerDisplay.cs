@@ -57,7 +57,7 @@ public class DriverTrackerDisplay(
 
     private TransformFactors? _transform = null;
 
-    private string _trackMapControlSequence = string.Empty;
+    private string[] _trackMapControlSequence = [];
 
     public Screen Screen => Screen.DriverTracker;
 
@@ -211,7 +211,7 @@ public class DriverTrackerDisplay(
         };
     }
 
-    private string GetTrackMap()
+    private string[] GetTrackMap()
     {
         if (
             !(
@@ -221,7 +221,7 @@ public class DriverTrackerDisplay(
             || sessionInfo.Latest.CircuitPoints.Count == 0
         )
         {
-            return string.Empty;
+            return [];
         }
 
         _transform ??= GetTransformFactors();
@@ -334,15 +334,18 @@ public class DriverTrackerDisplay(
 
         if (terminalInfo.IsKittyProtocolSupported.Value)
         {
-            return TerminalGraphics.KittyGraphicsSequenceDelete()
-                + TerminalGraphics.KittyGraphicsSequence(windowHeight, windowWidth, base64);
+            return
+            [
+                TerminalGraphics.KittyGraphicsSequenceDelete(),
+                .. TerminalGraphics.KittyGraphicsSequence(windowHeight, windowWidth, base64),
+            ];
         }
         else if (terminalInfo.IsITerm2ProtocolSupported.Value)
         {
-            return TerminalGraphics.ITerm2GraphicsSequence(windowHeight, windowWidth, base64);
+            return [TerminalGraphics.ITerm2GraphicsSequence(windowHeight, windowWidth, base64)];
         }
 
-        return "Unexpected error, shouldn't have got here. Please report!";
+        return ["Unexpected error, shouldn't have got here. Please report!"];
     }
 
     private TransformFactors GetTransformFactors()
@@ -381,7 +384,10 @@ public class DriverTrackerDisplay(
     public async Task PostContentDrawAsync()
     {
         await Terminal.OutAsync(ControlSequences.MoveCursorTo(TOP_OFFSET, LEFT_OFFSET));
-        await Terminal.OutAsync(_trackMapControlSequence);
+        foreach (var sequence in _trackMapControlSequence)
+        {
+            await Terminal.OutAsync(sequence);
+        }
     }
 
     private record TransformFactors(int ScaleFactor, int ShiftX, int ShiftY, int MaxX, int MaxY);
