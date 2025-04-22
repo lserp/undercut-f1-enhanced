@@ -52,11 +52,10 @@ public static class TerminalGraphics
         var args = new string[]
         {
             "a=T", // Immediate mode
-            "d=C", // Delete images intersecting with the current cursor (i.e. refresh)
             "q=1", // Suppress success responses back from the terminal
             $"r={height}", // Num rows
             $"c={width}", // Num rows
-            $"f=100" // We'll be sendingPNG encoded base64 data
+            $"f=100" // We'll be sending PNG encoded base64 data
         };
         return $"{ESCAPE_APC}{string.Join(',', args)};{base64EncodedImage}{ESCAPE_ST}";
     }

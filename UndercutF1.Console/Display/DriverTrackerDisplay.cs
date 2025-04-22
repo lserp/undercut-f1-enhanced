@@ -22,6 +22,7 @@ public class DriverTrackerDisplay(
 ) : IDisplay
 {
     private const int IMAGE_PADDING = 25;
+    private const int TARGET_IMAGE_SIZE = 600;
     private const int LEFT_OFFSET = 17;
     private const int TOP_OFFSET = 0;
     private const int BOTTOM_OFFSET = 1;
@@ -223,27 +224,25 @@ public class DriverTrackerDisplay(
         }
 
         var imageScaleFactor = Math.Max(
-            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.x)) / 350,
-            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.y)) / 350
+            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.x)) / TARGET_IMAGE_SIZE,
+            sessionInfo.Latest.CircuitPoints.Max(x => Math.Abs(x.y)) / TARGET_IMAGE_SIZE
         );
 
-        var circuitPoints = sessionInfo
-            .Latest.CircuitPoints.Select(x =>
-                (x: x.x / imageScaleFactor, y: x.y / imageScaleFactor)
-            )
-            .ToList();
+        var circuitPoints = sessionInfo.Latest.CircuitPoints.Select(x =>
+            (x: x.x / imageScaleFactor, y: x.y / imageScaleFactor)
+        );
 
         var minX = Math.Abs(circuitPoints.Min(x => x.x)) + IMAGE_PADDING;
         var minY = Math.Abs(circuitPoints.Min(x => x.y)) + IMAGE_PADDING;
 
         // Offset the coords to make them all > 0
-        circuitPoints = circuitPoints.Select(x => (x.x + minX, x.y + minY)).ToList();
+        circuitPoints = circuitPoints.Select(x => (x.x + minX, x.y + minY));
 
         var maxX = circuitPoints.Max(x => x.x) + IMAGE_PADDING;
         var maxY = circuitPoints.Max(x => x.y) + IMAGE_PADDING;
 
-        // Invert the Y coords due to how Y is displayed in a TUI (top=0 instead bottom=0)
-        circuitPoints = circuitPoints.Select(x => (x.x, maxY - x.y)).ToList();
+        // Invert the Y coords due to compensate for map coordinates vs image coordinates
+        circuitPoints = circuitPoints.Select(x => (x.x, maxY - x.y));
 
         // Draw the image as a square that fits the actual track map in
         var longestEdgeLength = Math.Max(maxX, maxY);
@@ -251,46 +250,24 @@ public class DriverTrackerDisplay(
         var canvas = surface.Canvas;
 
         // Draw lines between all the points of the track to create the track map
-        for (var i = 0; i < circuitPoints.Count - 1; i++)
-        {
-            var a = circuitPoints[i];
-            var b = circuitPoints[i + 1];
-            try
+        _ = circuitPoints.Aggregate(
+            (a, b) =>
             {
                 canvas.DrawLine(a.x, a.y, b.x, b.y, _trackLinePaint);
+                return b;
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to set create line from {a} to {b}", a, b);
-                canvas.DrawCircle(5, 5, 2, _errorPaint);
-            }
-        }
+        );
 
         var circuitCorners = sessionInfo
             .Latest.CircuitCorners.Select(x =>
                 (x.number, x: x.x / imageScaleFactor, y: x.y / imageScaleFactor)
             )
-            .Select(x => (x.number, x: x.x + minX, y: maxY - (x.y + minY)))
-            .ToList();
+            .Select(x => (x.number, x: x.x + minX, y: maxY - (x.y + minY)));
 
         foreach (var (number, x, y) in circuitCorners)
         {
-            try
-            {
-                // Draw the text to the right of the corner
-                canvas.DrawText(number.ToString(), x + 10, y, _cornerTextPaint);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(
-                    ex,
-                    "Failed to add corner number {corner} at {x},{y}",
-                    number,
-                    x,
-                    y
-                );
-                canvas.DrawCircle(5, 5, 2, _errorPaint);
-            }
+            // Draw the text to the right of the corner
+            canvas.DrawText(number.ToString(), x + 10, y, _cornerTextPaint);
         }
 
         // Add all the selected drivers positions to the map
@@ -301,43 +278,31 @@ public class DriverTrackerDisplay(
                 ?.Entries.GetValueOrDefault(driverNumber);
             if (position is not null && position.X.HasValue && position.Y.HasValue)
             {
-                try
+                if (state.SelectedDrivers.Contains(driverNumber))
                 {
-                    if (state.SelectedDrivers.Contains(driverNumber))
+                    var x = (position.X.Value / imageScaleFactor) + minX;
+                    var y = maxY - ((position.Y.Value / imageScaleFactor) + minY);
+                    var paint = new SKPaint
                     {
-                        var x = (position.X.Value / imageScaleFactor) + minX;
-                        var y = maxY - ((position.Y.Value / imageScaleFactor) + minY);
-                        var paint = new SKPaint
-                        {
-                            Color = SKColor.Parse(data.TeamColour),
-                            TextSize = 14,
-                            Typeface = _boldTypeface,
-                        };
+                        Color = SKColor.Parse(data.TeamColour),
+                        TextSize = 14,
+                        Typeface = _boldTypeface,
+                    };
 
-                        // Draw a white box around the driver currently selected by the cursor
-                        if (timingData.Latest.Lines[driverNumber].Line == state.CursorOffset)
-                        {
-                            var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
-                            canvas.DrawRoundRect(x - 6, y - 8, 46, 16, 4, 4, rectPaint);
-                        }
-
-                        canvas.DrawCircle(x, y, 5, paint);
-                        canvas.DrawText(
-                            data.Tla,
-                            (position.X.Value / imageScaleFactor) + minX + 8,
-                            maxY - ((position.Y.Value / imageScaleFactor) + minY) + 6,
-                            paint
-                        );
+                    // Draw a white box around the driver currently selected by the cursor
+                    if (timingData.Latest.Lines[driverNumber].Line == state.CursorOffset)
+                    {
+                        var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
+                        canvas.DrawRoundRect(x - 6, y - 8, 46, 16, 4, 4, rectPaint);
                     }
-                }
-                catch
-                {
-                    logger.LogError(
-                        "Failed to draw driver position at {X}, {Y}",
-                        position.X.Value,
-                        position.Y.Value
+
+                    canvas.DrawCircle(x, y, 5, paint);
+                    canvas.DrawText(
+                        data.Tla,
+                        (position.X.Value / imageScaleFactor) + minX + 8,
+                        maxY - ((position.Y.Value / imageScaleFactor) + minY) + 6,
+                        paint
                     );
-                    canvas.DrawCircle(5, 10, 2, _errorPaint);
                 }
             }
         }
@@ -345,7 +310,7 @@ public class DriverTrackerDisplay(
         var windowHeight = Terminal.Size.Height - TOP_OFFSET - BOTTOM_OFFSET;
         var windowWidth = Terminal.Size.Width - LEFT_OFFSET;
         // Terminal protocols will distort the image, so provide height/width as the biggest square that will definitely fit
-        // Terminal cells are twice as high as they are wide, so take that in to consideration
+        // Terminal cells are ~twice as high as they are wide, so take that in to consideration
         var shortestWindowEdgeLength = Math.Min(windowWidth, windowHeight * 2);
         windowHeight = shortestWindowEdgeLength / 2;
         windowWidth = shortestWindowEdgeLength;
@@ -379,6 +344,7 @@ public class DriverTrackerDisplay(
                 _errorPaint
             );
             canvas.DrawText($"Image Scale factor: {imageScaleFactor}", 5, 100, _errorPaint);
+            canvas.DrawText($"Image H/W: {maxY}/{maxX}", 5, 120, _errorPaint);
         }
 
         var imageData = surface.Snapshot().Encode();
