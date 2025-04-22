@@ -15,7 +15,7 @@ public class ConsoleLoop(
     ILogger<ConsoleLoop> logger
 ) : BackgroundService
 {
-    private const long TargetFrameTimeMs = 100;
+    private const long TargetFrameTimeMs = 150;
     private const byte ESC = 27; //0x1B
     private const byte CSI = 91; //0x5B [
     private const byte ARG_SEP = 59; //0x3B ;
