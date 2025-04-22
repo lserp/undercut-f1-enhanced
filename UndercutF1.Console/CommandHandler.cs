@@ -11,6 +11,7 @@ public static partial class CommandHandler
     private static WebApplicationBuilder GetBuilder(
         bool isApiEnabled = false,
         DirectoryInfo? dataDirectory = null,
+        DirectoryInfo? logDirectory = null,
         bool isVerbose = false,
         bool? notifyEnabled = null,
         bool useConsoleLogging = false
@@ -31,16 +32,17 @@ public static partial class CommandHandler
         {
             commandLineOpts.Add(nameof(LiveTimingOptions.DataDirectory), dataDirectory?.FullName);
         }
+        if (logDirectory is not null)
+        {
+            commandLineOpts.Add(nameof(LiveTimingOptions.LogDirectory), logDirectory?.FullName);
+        }
         if (notifyEnabled is not null)
         {
             commandLineOpts.Add(nameof(LiveTimingOptions.Notify), notifyEnabled.ToString());
         }
 
         builder
-            .Configuration.AddJsonFile(
-                Path.Join(LiveTimingOptions.BaseDirectory, "config.json"),
-                optional: true
-            )
+            .Configuration.AddJsonFile(LiveTimingOptions.ConfigFilePath, optional: true)
             .AddEnvironmentVariables("UNDERCUTF1_")
             .AddInMemoryCollection(commandLineOpts);
 
@@ -53,7 +55,7 @@ public static partial class CommandHandler
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Is(fileLogLevel)
             .WriteTo.File(
-                path: Path.Join(LiveTimingOptions.BaseDirectory, "logs/undercutf1.log"),
+                path: Path.Join(options.LogDirectory, "/undercutf1.log"),
                 rollOnFileSizeLimit: true,
                 rollingInterval: RollingInterval.Hour,
                 retainedFileCountLimit: 5

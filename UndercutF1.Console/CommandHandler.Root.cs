@@ -10,7 +10,8 @@ public static partial class CommandHandler
 {
     public static async Task Root(
         bool isApiEnabled,
-        DirectoryInfo dataDirectory,
+        DirectoryInfo? dataDirectory,
+        DirectoryInfo? logDirectory,
         bool isVerbose,
         bool? notifyEnabled
     )
@@ -18,6 +19,7 @@ public static partial class CommandHandler
         var builder = GetBuilder(
             isApiEnabled: isApiEnabled,
             dataDirectory: dataDirectory,
+            logDirectory: logDirectory,
             isVerbose: isVerbose,
             notifyEnabled: notifyEnabled
         );

@@ -16,4 +16,5 @@ public enum Screen
     TyreStints,
     DebugData,
     DownloadTranscriptionModel,
+    Info,
 }

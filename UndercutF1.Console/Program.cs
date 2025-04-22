@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using UndercutF1.Console;
+using UndercutF1.Data;
 
 var rootCommand = new RootCommand("undercutf1");
 
@@ -13,9 +14,13 @@ var isApiEnabledOption = new Option<bool>(
     () => false,
     "Whether the API endpoint should be exposed at http://localhost:61937"
 );
-var dataDirectoryOption = new Option<DirectoryInfo>(
+var dataDirectoryOption = new Option<DirectoryInfo?>(
     "--data-directory",
     "The directory to which timing data will be read from and written to"
+);
+var logDirectoryOption = new Option<DirectoryInfo?>(
+    "--log-directory",
+    "The directory to which logs will be written to"
 );
 var notifyOption = new Option<bool?>(
     "--notify",
@@ -25,12 +30,14 @@ var notifyOption = new Option<bool?>(
 rootCommand.AddGlobalOption(isVerboseOption);
 rootCommand.AddGlobalOption(isApiEnabledOption);
 rootCommand.AddGlobalOption(dataDirectoryOption);
+rootCommand.AddGlobalOption(logDirectoryOption);
 rootCommand.AddGlobalOption(notifyOption);
 
 rootCommand.SetHandler(
     CommandHandler.Root,
     isApiEnabledOption,
     dataDirectoryOption,
+    logDirectoryOption,
     isVerboseOption,
     notifyOption
 );
@@ -63,6 +70,7 @@ importCommand.SetHandler(
     meetingKeyOption,
     sessionKeyOption,
     dataDirectoryOption,
+    logDirectoryOption,
     isVerboseOption
 );
 
@@ -82,6 +90,7 @@ importListCommand.SetHandler(
     CommandHandler.ListMeetings,
     yearArgument,
     meetingKeyOption,
+    logDirectoryOption,
     isVerboseOption
 );
 

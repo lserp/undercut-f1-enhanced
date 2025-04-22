@@ -5,9 +5,18 @@ namespace UndercutF1.Console;
 
 public static partial class CommandHandler
 {
-    public static async Task ListMeetings(int year, int? meetingKey, bool isVerbose)
+    public static async Task ListMeetings(
+        int year,
+        int? meetingKey,
+        DirectoryInfo? logDirectory,
+        bool isVerbose
+    )
     {
-        var builder = GetBuilder(isVerbose: isVerbose, useConsoleLogging: true);
+        var builder = GetBuilder(
+            isVerbose: isVerbose,
+            logDirectory: logDirectory,
+            useConsoleLogging: true
+        );
         var app = builder.Build();
 
         var importer = app.Services.GetRequiredService<IDataImporter>();
