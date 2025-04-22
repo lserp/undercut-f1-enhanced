@@ -40,6 +40,7 @@ Feature Highlights:
   - [Listen to and Transcribe Team Radio](#listen-to-and-transcribe-team-radio)
 - [Getting Started with `undercutf1`](#getting-started-with-undercutf1)
   - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
     - [Install and run as a dotnet tool](#install-and-run-as-a-dotnet-tool)
     - [Install and run the standalone executable](#install-and-run-the-standalone-executable)
     - [Run using the docker image](#run-using-the-docker-image)
@@ -128,6 +129,22 @@ Audio playback prerequisites:
 
 ### Installation
 
+#### Prerequisites
+
+UndercutF1 tries to statically link as many dependencies as possible to make installation and usage easy.
+There are however some utilities that may need to be installed for some functionality:
+
+- Team Radio audio playback uses [NetCoreAudio](https://github.com/mobiletechtracker/NetCoreAudio) for playback. See their [Prerequisites](https://github.com/mobiletechtracker/NetCoreAudio#prerequisites) for information if playback does not work.
+  - On Linux, you need `mpg123` available on the `PATH`. For apt-based systems, you can install with `apt install mpg123`
+  - Windows and Mac _should_ work out of the box
+- Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See https://www.ffmpeg.org/download.html) for details on how to instal.
+  - On Linux apt-based systems, you can install with `apt install ffmpeg`
+  - On Mac with brew, you can install with `brew install ffmpeg`
+  - On Windows with WinGet, you can install with `winget ffmpeg`
+- Terminal graphics rely on [SkiaSharp](https://github.com/mono/SkiaSharp). I've statically linked all the skia libs, so you shouldn't need to download skia. However, skia does rely on `libfontconfig` which may not be installed on your system by default.
+  - On Linux apt-based systems, you can install with `apt install libfontconfig`
+  - On Mac with brew, you can install with `brew install fontconfig`
+
 #### Install and run as a dotnet tool
 
 `undercutf1` is available as a `dotnet` tool from NuGet, which means it can be installed system-wide simply by running:
@@ -175,7 +192,7 @@ docker run -it -v $HOME/undercut-f1/data:/data justaman62/undercutf1 import 2025
 
 ##### Known Issues with Docker
 
-- Audio playback of Team Radio may not work when using Docker. This is due to difficulties in using and routing the alsa audio, which I haven't managed to figure out yet.
+- Audio playback of Team Radio may not work when using Docker. This is due to difficulties in using audio devices in a cross-platform way, which I haven't managed to figure out yet.
 
 #### Run directly from Source
 
@@ -195,8 +212,7 @@ dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj -- import 2025
 
 1. Start `undercutf1` as described above
 2. Navigate to the <kbd>S</kbd> `Session` Screen
-3. Start a Live Session with the <kbd>L</kbd> `Start Live Session` action.
-4. Switch to the Timing Tower screen with the <kbd>T</kbd> `Timing Tower` action
+3. Start a Live Session with the <kbd>L</kbd> `Start Live Session` action
 
 During the session, streamed timing data will be written to [the configured data directory](#default-directories). This will allow for [future replays](#start-timing-for-a-pre-recorded-session) of this recorded data.
 
