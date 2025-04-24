@@ -6,7 +6,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/UndercutF1.Console/bin/Debug/net8.0/undercutf1.dll",
+            "program": "${workspaceFolder}/UndercutF1.Console/bin/Debug/net9.0/undercutf1.dll",
             "args": [],
             "cwd": "${workspaceFolder}/UndercutF1.Console/",
             "stopAtEntry": false,
