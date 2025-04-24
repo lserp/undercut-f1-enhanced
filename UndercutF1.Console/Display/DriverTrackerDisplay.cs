@@ -226,9 +226,7 @@ public class DriverTrackerDisplay(
 
         _transform ??= GetTransformFactors();
 
-        // Draw the image as a square that fits the actual track map in
-        var longestEdgeLength = Math.Max(_transform.MaxX, _transform.MaxY);
-        var surface = SKSurface.Create(new SKImageInfo(longestEdgeLength, longestEdgeLength));
+        var surface = SKSurface.Create(new SKImageInfo(_transform.MaxX, _transform.MaxY));
         var canvas = surface.Canvas;
 
         var circuitPoints = sessionInfo.Latest.CircuitPoints.Select(x =>
@@ -291,16 +289,29 @@ public class DriverTrackerDisplay(
 
         var windowHeight = Terminal.Size.Height - TOP_OFFSET - BOTTOM_OFFSET;
         var windowWidth = Terminal.Size.Width - LEFT_OFFSET;
-        // Terminal protocols will distort the image, so provide height/width as the biggest square that will definitely fit
+        // // Terminal protocols will distort the image, so provide height/width as the biggest square that will definitely fit
+        // var shortestWindowEdgeLength = Math.Min(windowWidth, windowHeight * 2);
+        // windowHeight = shortestWindowEdgeLength / 2;
+        // windowWidth = shortestWindowEdgeLength;
+
+        var targetAspectRatio =
+            Convert.ToDouble(_transform.MaxX) / Convert.ToDouble(_transform.MaxY);
         // Terminal cells are ~twice as high as they are wide, so take that in to consideration
-        var shortestWindowEdgeLength = Math.Min(windowWidth, windowHeight * 2);
-        windowHeight = shortestWindowEdgeLength / 2;
-        windowWidth = shortestWindowEdgeLength;
+        var availableAspectRatio = windowWidth / (windowHeight * 2.2);
+
+        if (targetAspectRatio > availableAspectRatio)
+        {
+            windowHeight = (int)Math.Ceiling(windowWidth / targetAspectRatio / 2.2);
+        }
+        else
+        {
+            windowWidth = (int)Math.Ceiling(windowHeight * 2.2 * targetAspectRatio);
+        }
 
         if (options.Value.Verbose)
         {
             // Add some debug information when verbose mode is on
-            canvas.DrawRect(0, 0, longestEdgeLength - 1, longestEdgeLength - 1, _errorPaint);
+            canvas.DrawRect(0, 0, _transform.MaxX - 1, _transform.MaxY - 1, _errorPaint);
             canvas.DrawText(
                 $"iTerm2 Support: {terminalInfo.IsITerm2ProtocolSupported.Value}",
                 5,
@@ -314,7 +325,7 @@ public class DriverTrackerDisplay(
                 _errorPaint
             );
             canvas.DrawText(
-                $"Window H/W: {windowHeight}/{windowWidth} Shortest: {shortestWindowEdgeLength}",
+                $"Window H/W: {windowHeight}/{windowWidth} Target/Avail: {targetAspectRatio:F2}/{availableAspectRatio:F2}",
                 5,
                 60,
                 _errorPaint
