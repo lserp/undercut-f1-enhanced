@@ -9,15 +9,20 @@ public class MainDisplay(IHttpClientFactory httpClientFactory, ILogger<MainDispl
 {
     public Screen Screen => Screen.Main;
 
-    private readonly FigletFont _font = FigletFont.Load(
-        Assembly.GetExecutingAssembly().GetManifestResourceStream("UndercutF1.Console.slant.flf")!
-    );
     private Task<string?>? _fetchVersionTask = null;
     private string _currentVersion = $"v{ThisAssembly.NuGetPackageVersion}";
 
     public Task<IRenderable> GetContentAsync()
     {
-        var title = new FigletText(_font, "UNDERCUT F1").Centered();
+        var title = new Text(
+            """
+               __  __  _   __  ____    ______  ____    ______  __  __  ______        ______  ___
+              / / / / / | / / / __ \  / ____/ / __ \  / ____/ / / / / /_  __/       / ____/ <  /
+             / / / / /  |/ / / / / / / __/   / /_/ / / /     / / / /   / /         / /_     / / 
+            / /_/ / / /|  / / /_/ / / /___  / _, _/ / /___  / /_/ /   / /         / __/    / /  
+            \____/ /_/ |_/ /_____/ /_____/ /_/ |_|  \____/  \____/   /_/         /_/      /_/   
+            """
+        ).Centered();
 
         var content = new Markup(
             """

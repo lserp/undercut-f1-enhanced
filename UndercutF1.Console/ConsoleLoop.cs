@@ -70,12 +70,10 @@ public class ConsoleLoop(
 
                 UpdateInputFooter(layout);
 
-                // Windows terminals need to have CRLFs, whereas Linux wants no newlines at all
-                var output = AnsiConsole.Console.ToAnsi(layout).Replace("\n", "");
-                if (OperatingSystem.IsWindows())
-                {
-                    output = output.Replace("\r", Environment.NewLine);
-                }
+                // Unix rawmode + Windows terminals need CRLFs, but Environment.NewLine differs and is used
+                var output = AnsiConsole
+                    .Console.ToAnsi(layout)
+                    .Replace(Environment.NewLine, "\r\n");
 
                 if (_previousDraw != output)
                 {
