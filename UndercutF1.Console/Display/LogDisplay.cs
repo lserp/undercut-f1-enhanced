@@ -20,10 +20,12 @@ public class LogDisplay(State state, InMemoryLogger inMemoryLogger, LogDisplayOp
             .RecordedLogs.ToList()
             .Where(x => x.Level >= options.MinimumLogLevel)
             .Reverse()
-            .Select(x => $"{x.Level} {x.Message} {x.Exception}")
+            .Select(x =>
+                $"{GetLevel(x.Level)} {Markup.Escape(x.Message)} {Markup.Escape(x.Exception?.ToString() ?? string.Empty)}"
+            )
             .Skip(state.CursorOffset)
             .Take(20)
-            .Select(x => new Text(x));
+            .Select(x => new Markup(x));
 
         var rowTexts = new List<IRenderable>()
         {
@@ -38,4 +40,16 @@ public class LogDisplay(State state, InMemoryLogger inMemoryLogger, LogDisplayOp
         var rows = new Rows(rowTexts);
         return Task.FromResult<IRenderable>(new Panel(rows).Expand());
     }
+
+    private string GetLevel(LogLevel level) =>
+        level switch
+        {
+            LogLevel.Critical => "[red bold]CRT[/]",
+            LogLevel.Error => "[red]ERR[/]",
+            LogLevel.Warning => "[yellow]WRN[/]",
+            LogLevel.Information => "[green]INF[/]",
+            LogLevel.Debug => "[blue]DBG[/]",
+            LogLevel.Trace => "[blue]TRC[/]",
+            _ => "UNK",
+        };
 }
