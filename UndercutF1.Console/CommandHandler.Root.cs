@@ -80,16 +80,16 @@ public static partial class CommandHandler
                 switch (level)
                 {
                     case Whisper.net.Logger.WhisperLogLevel.Error:
-                        app.Logger.LogError("Whisper: {Message}", msg);
+                        app.Logger.LogError("Whisper: {Message}", msg?.Trim('\n'));
                         break;
                     case Whisper.net.Logger.WhisperLogLevel.Warning:
-                        app.Logger.LogWarning("Whisper: {Message}", msg);
+                        app.Logger.LogWarning("Whisper: {Message}", msg?.Trim('\n'));
                         break;
                     case Whisper.net.Logger.WhisperLogLevel.Debug:
-                        app.Logger.LogDebug("Whisper: {Message}", msg);
+                        app.Logger.LogDebug("Whisper: {Message}", msg?.Trim('\n'));
                         break;
                     default:
-                        app.Logger.LogDebug("Whisper {Level}: {Message}", level, msg);
+                        app.Logger.LogDebug("Whisper {Level}: {Message}", level, msg?.Trim('\n'));
                         break;
                 }
             }

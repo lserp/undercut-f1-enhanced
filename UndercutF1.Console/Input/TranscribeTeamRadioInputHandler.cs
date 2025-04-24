@@ -73,7 +73,7 @@ public sealed class TranscribeTeamRadioInputHandler(
         {
             var text = $"""
                 Failed to transcribe, due to an unknown error.
-                Team Radio File Path: {radio.Value.DownloadedFilePath}
+                Message: {ex.Message}
                 """;
             logger.LogError(ex, text);
             radio.Value.Transcription = text;
