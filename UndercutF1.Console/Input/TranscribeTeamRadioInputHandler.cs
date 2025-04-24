@@ -20,8 +20,8 @@ public sealed class TranscribeTeamRadioInputHandler(
         _task switch
         {
             null or { IsCompletedSuccessfully: true } => "Transcribe",
-            { IsCompleted: false } => "Transcribing...",
-            _ => "Transcribe (Errored)",
+            { IsCompleted: false } => "[olive]Transcribing...[/]",
+            _ => "[red]Transcribe (Errored)[/]",
         };
 
     public int Sort => 41;

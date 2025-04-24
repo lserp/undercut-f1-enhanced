@@ -155,9 +155,9 @@ public class ConsoleLoop(
         var commandDescriptions = inputHandlers
             .Where(x => x.IsEnabled && x.ApplicableScreens.Contains(state.CurrentScreen))
             .OrderBy(x => x.Sort)
-            .Select(x => $"[{x.DisplayKeys.ToDisplayCharacters()}] {x.Description}");
+            .Select(x => $"[[{x.DisplayKeys.ToDisplayCharacters()}]] {x.Description}");
 
-        var columns = new Columns(commandDescriptions.Select(x => new Text(x)));
+        var columns = new Columns(commandDescriptions.Select(x => new Markup(x)));
         columns.Collapse();
         layout["Footer"].Update(columns);
     }

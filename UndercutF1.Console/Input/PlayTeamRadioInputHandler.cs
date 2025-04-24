@@ -12,7 +12,7 @@ public sealed class PlayTeamRadioInputHandler(State state, TeamRadioProcessor te
 
     public ConsoleKey[] Keys => [ConsoleKey.Enter];
 
-    public string Description => _player.Playing ? "⏹ Stop" : "► Play Radio";
+    public string Description => _player.Playing ? "[olive]⏹ Stop[/]" : "► Play Radio";
 
     public int Sort => 40;
 
