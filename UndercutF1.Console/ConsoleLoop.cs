@@ -70,12 +70,10 @@ public class ConsoleLoop(
 
                 UpdateInputFooter(layout);
 
-                // Windows terminals need to have CRLFs, whereas Linux wants no newlines at all
-                var output = AnsiConsole.Console.ToAnsi(layout).Replace("\n", "");
-                if (OperatingSystem.IsWindows())
-                {
-                    output = output.Replace("\r", Environment.NewLine);
-                }
+                // Unix rawmode + Windows terminals need CRLFs, but Environment.NewLine differs and is used
+                var output = AnsiConsole
+                    .Console.ToAnsi(layout)
+                    .Replace(Environment.NewLine, "\r\n");
 
                 if (_previousDraw != output)
                 {
@@ -157,9 +155,9 @@ public class ConsoleLoop(
         var commandDescriptions = inputHandlers
             .Where(x => x.IsEnabled && x.ApplicableScreens.Contains(state.CurrentScreen))
             .OrderBy(x => x.Sort)
-            .Select(x => $"[{x.DisplayKeys.ToDisplayCharacters()}] {x.Description}");
+            .Select(x => $"[[{x.DisplayKeys.ToDisplayCharacters()}]] {x.Description}");
 
-        var columns = new Columns(commandDescriptions.Select(x => new Text(x)));
+        var columns = new Columns(commandDescriptions.Select(x => new Markup(x)));
         columns.Collapse();
         layout["Footer"].Update(columns);
     }

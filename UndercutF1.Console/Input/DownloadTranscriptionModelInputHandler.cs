@@ -17,9 +17,9 @@ public sealed class DownloadTranscriptionModelInputHandler(
     public string Description =>
         _task switch
         {
-            { IsCompleted: false } => "Downloading...",
+            { IsCompleted: false } => "[olive]Downloading, Please Wait...[/]",
             null => "Download",
-            _ => "Error, Retry?",
+            _ => "[red]Error, Retry?[/]",
         };
 
     public int Sort => 40;

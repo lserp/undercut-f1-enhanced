@@ -18,7 +18,8 @@ public class PauseClockInputHandler(IDateTimeProvider dateTimeProvider) : IInput
 
     public ConsoleKey[] Keys => [ConsoleKey.P];
 
-    public string Description => dateTimeProvider.IsPaused ? "Resume Clock" : "Pause Clock";
+    public string Description =>
+        dateTimeProvider.IsPaused ? "[olive]Resume Clock[/]" : "Pause Clock";
 
     public int Sort => 23;
 

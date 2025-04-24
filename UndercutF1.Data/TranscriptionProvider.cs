@@ -15,7 +15,8 @@ public class TranscriptionProvider(
     ILogger<TranscriptionProvider> logger
 ) : ITranscriptionProvider
 {
-    public string ModelPath => Path.Join(options.Value.DataDirectory, "models/ggml-base.bin");
+    public string ModelPath =>
+        Path.Join(options.Value.DataDirectory, "models/ggml-large-v3-turbo-q5.bin");
 
     public bool IsModelDownloaded => File.Exists(ModelPath);
 
@@ -31,15 +32,20 @@ public class TranscriptionProvider(
 
         var destFilePath = filePath + ".wav";
 
-        // Cannot use Pipes/Stream here for the output for some reason, so have to write to/from files
-        FFMpegArguments
-            .FromFileInput(filePath, verifyExists: true)
-            .OutputToFile(
-                destFilePath,
-                overwrite: false,
-                options => options.WithAudioSamplingRate(16000)
-            )
-            .ProcessSynchronously();
+        if (!File.Exists(destFilePath))
+        {
+            // Cannot use Pipes/Stream here for the output for some reason, so have to write to/from files
+            // Whisper requires input files to be sampled at 16kHz, so use FFMpeg to resample the team radio file
+            // FFMpeg will also convert the mp2 file to a .wav file
+            FFMpegArguments
+                .FromFileInput(filePath, verifyExists: true)
+                .OutputToFile(
+                    destFilePath,
+                    overwrite: false,
+                    options => options.WithAudioSamplingRate(16000)
+                )
+                .ProcessSynchronously();
+        }
 
         var text = string.Empty;
 
@@ -63,9 +69,10 @@ public class TranscriptionProvider(
             );
             Directory.CreateDirectory(Directory.GetParent(ModelPath)!.FullName);
             using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(
-                GgmlType.BaseEn
+                GgmlType.LargeV3Turbo,
+                QuantizationType.Q8_0
             );
-            ;
+
             using var fileWriter = File.OpenWrite(ModelPath);
             await modelStream.CopyToAsync(fileWriter);
         }
