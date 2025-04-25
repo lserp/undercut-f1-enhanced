@@ -9,7 +9,7 @@ public class EscapeInputHandler(State state) : IInputHandler
     public ConsoleKey[] Keys =>
         state.CurrentScreen == Screen.Main
             ? [ConsoleKey.Q, ConsoleKey.X, (ConsoleKey)3]
-            : [ConsoleKey.Escape, (ConsoleKey)3];
+            : [ConsoleKey.Escape, (ConsoleKey)3, ConsoleKey.F16]; // ConsoleKey.F16 is actually Backspace
 
     public ConsoleKey[] DisplayKeys =>
         [state.CurrentScreen == Screen.Main ? ConsoleKey.Q : ConsoleKey.Escape];

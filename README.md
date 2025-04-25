@@ -55,7 +55,7 @@ Feature Highlights:
 - [Configuration](#configuration)
   - [Default Directories](#default-directories)
 - [Logging](#logging)
-- [Live Timing Data Source](#live-timing-data-source)
+- [Alternate Key Binds](#alternate-key-binds)
 - [Data Recording and Replay](#data-recording-and-replay)
 - [Notice](#notice)
 
@@ -294,32 +294,19 @@ When running `undercutf1` logs are available in two places:
 
 Default log level is set to `Information`. More verbose logging can be enabled with the [`verbose` config option](#configuration).
 
-## Live Timing Data Source
+## Alternate Key Binds
 
-F1 live timing is streamed using `SignalR`. The `UndercutF1.Data` simply connects to this endpoint, subscribes to the data feed, and listens for messages. It subscribes to the following "topics":
+`undercutf1` displays the keys associated with each action that is applicable for the current screen.
+However, the shown keys aren't the only keys which can trigger the action, there are alternative keys which may be more intuitive for users of other TUIs.
 
-- `Heartbeat`
-- `ExtrapolatedClock`
-- `TopThree`
-- `TimingStats`
-- `TimingAppData`
-- `WeatherData`
-- `TrackStatus`
-- `DriverList`
-- `RaceControlMessages`
-- `SessionInfo`
-- `SessionData`
-- `LapCount`
-- `TimingData`
-- `CarData.z`
-- `Position.z`
-- `ChampionshipPrediction`
-- `TeamRadio`
-- `TyreStintSeries`
+- <kbd>H</kbd>,<kbd>J</kbd>,<kbd>K</kbd>,<kbd>L</kbd> can be used in place of arrow keys.
+- <kbd>Backspace</kbd> can be used in place of the <kbd>Escape</kbd> key.
+- <kbd>^ Control</kbd>+<kbd>C</kbd> can always be used to go back a screen, or exit the app. You may need to press multiple times to completely exit the app.
+- <kbd>⇧ Shift</kbd> can be held for certain actions to modify the action. For example, hold shift to change delay by 30 seconds instead of 5, or to move the cursor by 5 positions instead of 1.
 
 ## Data Recording and Replay
 
-All events received by the live timing client will be written to the configured `Data Directory`, see [see Configuration for details](#configuration). Files will be written to a subdirectory named using the current sessions name, e.g. `<data-directory>/Jeddah_Race/`. In this directory, two files will be written:
+All events received by the live timing client will be written to the configured `Data Directory`, see [see Configuration for details](#configuration). Files will be written to a subdirectory named using the current sessions name, e.g. `<data-directory>/2025_Jeddah_Race/`. In this directory, two files will be written:
 
 - `subscribe.txt` contains the data received at subscription time (i.e. when the live timing client connected to the stream)
 - `live.txt` contains an append-log of every message received in the stream
