@@ -20,8 +20,22 @@ public class DownloadTranscriptionModelDisplay(ITranscriptionProvider transcript
             Please press [bold]⏎ Enter[/] if you're happy for this model to be downloaded, or press [bold]Esc[/] to abort.
 
             Once downloaded, you'll be sent back to the Team Radio list so you can try to transcribe again.
+
+            
             """;
 
-        return Task.FromResult<IRenderable>(new Panel(new Markup(text)).Expand());
+        var downloadProgress = Math.Ceiling(transcriptionProvider.DownloadProgress * 100);
+
+        IRenderable rows =
+            downloadProgress == 0
+                ? new Markup(text)
+                : new Rows(
+                    new Markup(text),
+                    new BarChart()
+                        .AddItem("Download Progress (%)", downloadProgress, Color.Green)
+                        .WithMaxValue(100)
+                );
+
+        return Task.FromResult<IRenderable>(new Panel(rows).Expand());
     }
 }

@@ -6,7 +6,6 @@ using UndercutF1.Data;
 public class ManageSessionDisplay(
     ITimingService timingService,
     IDateTimeProvider dateTimeProvider,
-    IJsonTimingClient jsonTimingClient,
     ILiveTimingClient liveTimingClient,
     SessionInfoProcessor sessionInfo
 ) : IDisplay
@@ -32,14 +31,10 @@ public class ManageSessionDisplay(
 
         var status = new Rows(
             new Text(
-                $"Simulation Status: {jsonTimingClient.ExecuteTask?.Status.ToString() ?? "No Simulation Running"}"
+                $"Live Client Status: {liveTimingClient.Connection?.State.ToString() ?? "No Connection"}"
             ),
-            new Text(
-                $"Real Client Status: {liveTimingClient.Connection?.State.ToString() ?? "No Connection"}"
-            ),
-            new Text(
-                $"Delay: {dateTimeProvider.Delay} / Simulation Time (UTC): {dateTimeProvider.Utc:s}"
-            ),
+            new Text($"Simulation Time (UTC): {dateTimeProvider.Utc:s}"),
+            new Text($"Delay: {dateTimeProvider.Delay}"),
             new Text($"Items in Queue: {timingService.GetRemainingWorkItems()}")
         );
 
