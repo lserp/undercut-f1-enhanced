@@ -140,7 +140,7 @@ There are however some utilities that may need to be installed for some function
 - Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See https://www.ffmpeg.org/download.html) for details on how to instal.
   - On Linux apt-based systems, you can install with `apt install ffmpeg`
   - On Mac with brew, you can install with `brew install ffmpeg`
-  - On Windows with WinGet, you can install with `winget ffmpeg`
+  - On Windows with WinGet, you can install with `winget install ffmpeg`
 - Terminal graphics rely on [SkiaSharp](https://github.com/mono/SkiaSharp). I've statically linked all the skia libs, so you shouldn't need to download skia. However, skia does rely on `libfontconfig` which may not be installed on your system by default.
   - On Linux apt-based systems, you can install with `apt install libfontconfig`
   - On Mac with brew, you can install with `brew install fontconfig`
