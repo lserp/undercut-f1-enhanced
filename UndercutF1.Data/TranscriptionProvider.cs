@@ -15,10 +15,16 @@ public class TranscriptionProvider(
     ILogger<TranscriptionProvider> logger
 ) : ITranscriptionProvider
 {
+    private const int ExpectedModelFileSize = 574_041_195;
+
+    private Stream? _downloadStream = null;
+
     public string ModelPath =>
         Path.Join(options.Value.DataDirectory, "models/ggml-large-v3-turbo-q5.bin");
 
     public bool IsModelDownloaded => File.Exists(ModelPath);
+
+    public double DownloadProgress => (_downloadStream?.Position ?? 0.0) / ExpectedModelFileSize;
 
     public async Task<string> TranscribeFromFileAsync(
         string filePath,
@@ -70,15 +76,20 @@ public class TranscriptionProvider(
             Directory.CreateDirectory(Directory.GetParent(ModelPath)!.FullName);
             using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(
                 GgmlType.LargeV3Turbo,
-                QuantizationType.Q8_0
+                QuantizationType.Q5_0
             );
 
             using var fileWriter = File.OpenWrite(ModelPath);
+
+            _downloadStream = fileWriter;
+
             await modelStream.CopyToAsync(fileWriter);
+
+            _downloadStream = null;
         }
         else
         {
-            logger.LogDebug("Whisper model already exists at {ModelPAth}.", ModelPath);
+            logger.LogDebug("Whisper model already exists at {ModelPath}.", ModelPath);
         }
     }
 }
