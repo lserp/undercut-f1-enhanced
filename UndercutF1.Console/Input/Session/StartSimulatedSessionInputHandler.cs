@@ -42,7 +42,9 @@ public class StartSimulatedSessionInputHandler(
             var selected = directories.ElementAt(displayOptions.SelectedLocation.Value).Value;
             if (state.CursorOffset >= 0 && state.CursorOffset < selected.Count)
             {
-                _ = jsonTimingClient.StartAsync(selected.ElementAt(state.CursorOffset).Directory);
+                _ = jsonTimingClient.LoadSimulationDataAsync(
+                    selected.ElementAt(state.CursorOffset).Directory
+                );
                 state.CurrentScreen = Screen.TimingTower;
                 state.CursorOffset = 0;
             }

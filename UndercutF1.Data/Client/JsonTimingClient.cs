@@ -12,8 +12,6 @@ public class JsonTimingClient(
     ILogger<JsonTimingClient> logger
 ) : IJsonTimingClient
 {
-    public Task? ExecuteTask { get; private set; }
-
     private async Task<(
         string Location,
         DateOnly Date,
@@ -88,18 +86,10 @@ public class JsonTimingClient(
         }
     }
 
-    /// <inheritdoc />
-    public Task StartAsync(string directory, CancellationToken cancellationToken)
+    public async Task LoadSimulationDataAsync(string directory, CancellationToken cancellationToken)
     {
-        ExecuteTask = LoadSimulationDataAsync(directory, cancellationToken);
-        return ExecuteTask;
-    }
+        await Task.Yield();
 
-    private async Task LoadSimulationDataAsync(
-        string directory,
-        CancellationToken cancellationToken
-    )
-    {
         try
         {
             // Handle the dump of data we receive at subscription time
