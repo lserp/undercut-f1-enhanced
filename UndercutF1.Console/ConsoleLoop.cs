@@ -22,6 +22,7 @@ public class ConsoleLoop(
     private const byte FE_START = 79; //0x4F
 
     private string _previousDraw = string.Empty;
+    private bool _stopped = false;
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -115,33 +116,41 @@ public class ConsoleLoop(
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (!ExecuteTask?.IsCompleted ?? false)
+        // Don't clean up the terminal multiple times.
+        if (_stopped)
         {
-            // Don't log if the token has already been cancelled, as that means we've already stopped.
-            await Terminal.OutLineAsync("Exiting undercutf1...", CancellationToken.None);
-            logger.LogInformation("ConsoleLoop Stopping.");
+            await base.StopAsync(cancellationToken);
+            hostApplicationLifetime.StopApplication();
+            return;
         }
+
+        await Terminal.OutLineAsync("Exiting undercutf1...", CancellationToken.None);
+        logger.LogInformation("ConsoleLoop Stopping.");
+
         await Terminal.OutAsync(
             ControlSequences.ClearScreen(ClearMode.Full),
             CancellationToken.None
         );
         await Terminal.OutAsync(ControlSequences.SetCursorVisibility(true), CancellationToken.None);
+        Terminal.DisableRawMode();
         await Terminal.OutAsync(
             ControlSequences.SetScreenBuffer(ScreenBuffer.Main),
             CancellationToken.None
         );
-        Terminal.DisableRawMode();
+
+        _stopped = true;
+
         await base.StopAsync(cancellationToken);
         hostApplicationLifetime.StopApplication();
     }
 
     private static async Task SetupTerminalAsync(CancellationToken cancellationToken)
     {
-        Terminal.EnableRawMode();
         await Terminal.OutAsync(
             ControlSequences.SetScreenBuffer(ScreenBuffer.Alternate),
             cancellationToken
         );
+        Terminal.EnableRawMode();
         await Terminal.OutAsync(ControlSequences.SetCursorVisibility(false), cancellationToken);
         await Terminal.OutAsync(ControlSequences.MoveCursorTo(0, 0), cancellationToken);
         await Terminal.OutAsync(ControlSequences.ClearScreen(ClearMode.Full), cancellationToken);
