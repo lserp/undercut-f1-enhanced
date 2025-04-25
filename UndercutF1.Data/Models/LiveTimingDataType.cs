@@ -21,4 +21,5 @@ public enum LiveTimingDataType
     ChampionshipPrediction,
     TeamRadio,
     TyreStintSeries,
+    PitStopSeries,
 }

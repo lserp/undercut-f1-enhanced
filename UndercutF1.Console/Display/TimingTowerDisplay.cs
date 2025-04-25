@@ -495,6 +495,7 @@ public class TimingTowerDisplay(
                 "2" => new Style(foreground: Color.Black, background: Color.Yellow), // Yellow Flag
                 "4" => new Style(foreground: Color.Black, background: Color.Yellow), // Safety Car
                 "6" => new Style(foreground: Color.Black, background: Color.Yellow), // VSC Deployed
+                "7" => new Style(foreground: Color.Black, background: Color.Yellow), // VSC Ending
                 "5" => new Style(foreground: Color.White, background: Color.Red), // Red Flag
                 _ => Style.Plain,
             };

@@ -7,6 +7,7 @@ namespace UndercutF1.Console;
 public class TyreStintDisplay(
     State state,
     TyreStintSeriesProcessor tyreStintSeries,
+    PitStopSeriesProcessor pitStopSeries,
     DriverListProcessor driverList,
     TimingDataProcessor timingData,
     LapCountProcessor lapCount,
@@ -108,6 +109,10 @@ public class TyreStintDisplay(
         var columns = new List<Rows>();
         foreach (var (stintNumber, stint) in stints)
         {
+            var pitStop = pitStopSeries
+                .Latest.PitTimes.GetValueOrDefault(selectedDriverNumber)
+                ?.GetValueOrDefault((int.Parse(stintNumber) - 1).ToString())
+                ?.PitStop;
             var compoundMarkup = DisplayUtils.GetStyleForTyreCompound(stint.Compound).ToMarkup();
             // Use a consistent tyre compound header to centre it nicely
             var header = stint.Compound switch
@@ -121,11 +126,13 @@ public class TyreStintDisplay(
             };
             var rows = new List<Markup>
             {
-                new(" "),
                 new($"[{compoundMarkup}]{header}[/]"),
-                new($"New        {(stint.New.GetValueOrDefault() ? "[green]YES[/]" : " NO")}"),
-                new($"Start Age   {stint.StartLaps:D2}"),
+                new(
+                    $"Start Age  {(stint.New.GetValueOrDefault() ? "[green]NEW[/]" : $" {stint.StartLaps:D2}")}"
+                ),
                 new($"Total Laps  {stint.TotalLaps:D2}"),
+                pitStop is null ? new(" ") : new($"Stop Time  {pitStop?.PitStopTime}"),
+                pitStop is null ? new(" ") : new($"Lane    {pitStop?.PitLaneTime}"),
             };
             columns.Add(new Rows(rows).Collapse());
         }

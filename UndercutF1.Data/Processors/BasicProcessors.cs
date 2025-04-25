@@ -21,3 +21,5 @@ public class TimingStatsProcessor(IMapper mapper) : ProcessorBase<TimingStatsDat
 
 public class TyreStintSeriesProcessor(IMapper mapper)
     : ProcessorBase<TyreStintSeriesDataPoint>(mapper);
+
+public class PitStopSeriesProcessor(IMapper mapper) : ProcessorBase<PitStopSeriesDataPoint>(mapper);
