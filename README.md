@@ -101,7 +101,7 @@ NOTE: Currently the track map is only supported in the iTerm2 terminal (by imple
 
 ### Tyre Stint / Strategy
 
-The `Tyre Stint` page shows the tyre strategy for all the drivers. At a glance, see what tyres the drivers have used, how old they are, and if they are on an offset strategy to any other drivers.
+The `Tyre Stint` page shows the tyre strategy for all the drivers. At a glance, see what tyres the drivers have used, how old they are, and if they are on an offset strategy to any other drivers. Each stint contains the pit stop time and pit lane time for the pit stop at the start of the stint.
 
 Use the <kbd>▼</kbd>/<kbd>▲</kbd> `Cursor` actions to view more information for a particular drivers strategy.
 
