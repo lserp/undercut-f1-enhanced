@@ -89,12 +89,8 @@ public class ConsoleLoop(
             }
             catch (Exception ex)
             {
-                await Terminal.ErrorLineAsync(
-                    $"Exception whilst rendering screen {state.CurrentScreen}",
-                    cancellationToken
-                );
-                await Terminal.ErrorAsync(ex, cancellationToken);
                 logger.LogError(ex, "Error rendering screen: {CurrentScreen}", state.CurrentScreen);
+                await DisplayErrorScreenAsync(ex);
             }
 
             if (terminalInfo.IsSynchronizedOutputSupported.Value)
@@ -158,6 +154,33 @@ public class ConsoleLoop(
 
     private static async Task SetupBufferAsync(CancellationToken cancellationToken) =>
         await Terminal.OutAsync(ControlSequences.MoveCursorTo(0, 0), cancellationToken);
+
+    private async Task DisplayErrorScreenAsync(Exception exception)
+    {
+        try
+        {
+            await SetupBufferAsync(CancellationToken.None);
+            var exceptionPanel = new Panel(
+                new Rows(
+                    new Text($"Failed to render screen {state.CurrentScreen}"),
+                    exception.GetRenderable()
+                )
+            )
+            {
+                Height = Terminal.Size.Height - 1,
+            };
+
+            var output = AnsiConsole
+                .Console.ToAnsi(exceptionPanel)
+                .Replace(Environment.NewLine, "\r\n");
+
+            await Terminal.OutAsync(output);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to display error screen (things must be bad)");
+        }
+    }
 
     private void UpdateInputFooter(Layout layout)
     {
