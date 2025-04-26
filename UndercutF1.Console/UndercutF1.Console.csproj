@@ -47,4 +47,14 @@
     <None Include="../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <Target Name="OverrideVersion" AfterTargets="GetBuildVersion" Condition="'$(OverridePackageVersion)' != ''">
+    <PropertyGroup>
+      <PackageVersion>$(OverridePackageVersion)</PackageVersion>
+      <AssemblyVersion>$(OverridePackageVersion)</AssemblyVersion>
+      <AssemblyInformationalVersion>$(OverridePackageVersion)</AssemblyInformationalVersion>
+      <FileVersion>$(OverridePackageVersion)</FileVersion>
+      <InformationalVersion>$(OverridePackageVersion)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
 </Project>
