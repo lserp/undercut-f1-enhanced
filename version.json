@@ -7,8 +7,10 @@
   ],
   "cloudBuild": {
     "buildNumber": {
-      "enabled": true
-    }
+      "enabled": false
+    },
+    "setAllVariables": false,
+    "setVersionVariables": false
   },
   "release" : {
     "tagName" : "v{version}",
