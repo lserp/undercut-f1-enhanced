@@ -40,6 +40,7 @@ public sealed class LiveTimingClient(
         "ChampionshipPrediction",
         "TeamRadio",
         "TyreStintSeries",
+        "PitStopSeries",
     ];
 
     public HubConnection? Connection { get; private set; }

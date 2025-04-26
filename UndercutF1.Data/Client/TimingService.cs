@@ -134,6 +134,7 @@ public class TimingService(
                 obj["TyreStintSeries"]?.ToString(),
                 DateTimeOffset.UtcNow
             );
+            ProcessData("PitStopSeries", obj["PitStopSeries"]?.ToString(), DateTimeOffset.UtcNow);
         }
         catch (Exception ex)
         {
@@ -258,6 +259,17 @@ public class TimingService(
                     }
                 }
                 SendToProcessor<TyreStintSeriesDataPoint>(json);
+                break;
+            case LiveTimingDataType.PitStopSeries:
+                var pitStopSeriesDrivers = json["PitTimes"]?.AsObject() ?? [];
+                var pitStopDriver = pitStopSeriesDrivers.Select(x => x.Key);
+                foreach (var driverNumber in pitStopDriver)
+                {
+                    pitStopSeriesDrivers[driverNumber] = ArrayToIndexedDictionary(
+                        pitStopSeriesDrivers[driverNumber]
+                    );
+                }
+                SendToProcessor<PitStopSeriesDataPoint>(json);
                 break;
         }
     }
