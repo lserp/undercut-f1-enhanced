@@ -76,24 +76,18 @@ importCommand.SetHandler(
 
 rootCommand.AddCommand(importCommand);
 
-// Provided for backwards compatibility, but the normal import command now lists
-var importListCommand = new Command(
-    "list",
+var infoCommand = new Command(
+    "info",
     """
-    [DEPRECATED - Use the import command directly without all options to list meetings and sessions]
-    Lists the available Meetings and Sessions that can be imported.
+    Prints diagnostics about undercutf1, and the terminal in the command is run in.ƒ
     """
 );
-importListCommand.AddArgument(yearArgument);
-importListCommand.AddOption(meetingKeyOption);
-importListCommand.SetHandler(
-    CommandHandler.ListMeetings,
-    yearArgument,
-    meetingKeyOption,
+infoCommand.SetHandler(
+    CommandHandler.GetInfo,
+    dataDirectoryOption,
     logDirectoryOption,
     isVerboseOption
 );
-
-importCommand.AddCommand(importListCommand);
+rootCommand.AddCommand(infoCommand);
 
 await rootCommand.InvokeAsync(args);

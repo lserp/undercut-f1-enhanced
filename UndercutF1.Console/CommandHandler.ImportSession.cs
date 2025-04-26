@@ -54,4 +54,46 @@ public static partial class CommandHandler
             await importer.ImportSessionAsync(year, meetingKey.Value, sessionKey.Value);
         }
     }
+
+    private static void WriteMeetings(List<ListMeetingsApiResponse.Meeting> meetings)
+    {
+        var table = new Table().AddColumns(
+            new TableColumn("Key"),
+            new("Meeting Name"),
+            new("Location")
+        );
+
+        table.Title = new TableTitle("Available Meetings");
+
+        foreach (var meeting in meetings)
+        {
+            table.AddRow(meeting.Key.ToString(), meeting.Name, meeting.Location);
+        }
+
+        AnsiConsole.Write(table);
+    }
+
+    private static void WriteSessions(ListMeetingsApiResponse.Meeting meeting)
+    {
+        var table = new Table().AddColumns(
+            new TableColumn("Key"),
+            new("Meeting Name"),
+            new("Session Name"),
+            new("Session Start (UTC)")
+        );
+
+        table.Title = new TableTitle("Available Sessions");
+
+        foreach (var session in meeting.Sessions)
+        {
+            table.AddRow(
+                session.Key.ToString(),
+                meeting.Name,
+                session.Name,
+                $"{session.StartDate - session.GmtOffset:u}"
+            );
+        }
+
+        AnsiConsole.Write(table);
+    }
 }

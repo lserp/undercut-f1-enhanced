@@ -10,10 +10,10 @@ public sealed partial class TerminalInfoProvider
 
     private static readonly string[] ITERM_PROTOCOL_SUPPORTED_TERMINALS = ["iterm", "wezterm"];
 
-    [GeneratedRegex(@"\u001B_Gi=31;(.+)\u001B\\")]
+    [GeneratedRegex(@"\u001B_G(.+)\u001B\\")]
     private static partial Regex TerminalKittyGraphicsResponseRegex();
 
-    [GeneratedRegex(@"\u001B\[\?2026;[123]\$y")]
+    [GeneratedRegex(@"\u001B\[\?2026;(\d+)\$y")]
     private static partial Regex TerminalSynchronizedOutputResponseRegex();
 
     /// <summary>
@@ -57,7 +57,7 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetKittyProtocolSupported()
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(16);
+        var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
             // Query the terminal with a graphic protocol specific escape code
@@ -76,12 +76,17 @@ public sealed partial class TerminalInfoProvider
                 && match
                     .Groups[1]
                     .Captures[0]
-                    .Value.Equals("OK", StringComparison.InvariantCultureIgnoreCase);
+                    .Value.Equals("i=31;OK", StringComparison.InvariantCultureIgnoreCase);
             _logger.LogDebug(
                 "Kitty Protocol Supported: {Supported}, Response: {Response}",
                 supported,
-                SanitizeResponse(str)
+                Util.Sanitize(str)
             );
+
+            if (match.Success && !str.Contains("\u001B[?"))
+            {
+                DiscardExtraResponse();
+            }
             return supported;
         }
         catch (Exception e)
@@ -97,7 +102,7 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetSynchronizedOutputSupported()
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(16);
+        var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
             // Send a DECRQM query to the terminal to check for support
@@ -105,16 +110,32 @@ public sealed partial class TerminalInfoProvider
             // Also send a device attributes escape code, so that there is always something to read from stdin
             Terminal.Out("\u001B[c");
 
-            // Expected response: <ESC> [ ? 2026 ; 0 $ y
+            // Expected response: <ESC> [ ? 2026 ; 1 $ y
             Terminal.Read(buffer);
             var str = Encoding.ASCII.GetString(buffer);
             var match = TerminalSynchronizedOutputResponseRegex().Match(str);
 
+            var supported = false;
+            if (
+                match.Success
+                && match.Groups.Count == 2
+                && int.TryParse(match.Groups[1].Captures[0].Value, out var responseValue)
+            )
+            {
+                // See https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036#feature-detection
+                supported = responseValue > 0 && responseValue < 4;
+            }
+
             _logger.LogDebug(
                 "Synchronized Output Supported: {Supported}, Response: {Response}",
-                match.Success,
-                SanitizeResponse(str)
+                supported,
+                Util.Sanitize(str)
             );
+
+            if (match.Success && !str.Contains("\u001B[?"))
+            {
+                DiscardExtraResponse();
+            }
 
             return match.Success;
         }
@@ -129,5 +150,18 @@ public sealed partial class TerminalInfoProvider
         }
     }
 
-    private string SanitizeResponse(string str) => str.Replace("\u001B", "<ESC>");
+    private void DiscardExtraResponse()
+    {
+        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        try
+        {
+            // Got a response to the check, so read and throw away the device attributes response as well
+            _ = Terminal.Read(buffer);
+            _logger.LogDebug("Reading device attr response {Res}", Util.Sanitize(buffer));
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
 }

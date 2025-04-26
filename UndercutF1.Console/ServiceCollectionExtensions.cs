@@ -24,7 +24,8 @@ public static class ServiceCollectionExtensions
 
         foreach (var type in displayTypes)
         {
-            _ = services.AddSingleton(typeof(IDisplay), type);
+            _ = services.AddSingleton(type);
+            _ = services.AddSingleton(typeof(IDisplay), sp => sp.GetRequiredService(type));
         }
 
         services.AddSingleton<LogDisplayOptions>();
