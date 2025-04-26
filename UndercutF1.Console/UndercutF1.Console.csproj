@@ -54,6 +54,7 @@
       <AssemblyInformationalVersion>$(OverridePackageVersion)</AssemblyInformationalVersion>
       <FileVersion>$(OverridePackageVersion)</FileVersion>
       <InformationalVersion>$(OverridePackageVersion)</InformationalVersion>
+      <NugetPackageVersion>$(OverridePackageVersion)</NugetPackageVersion>
     </PropertyGroup>
   </Target>
 
