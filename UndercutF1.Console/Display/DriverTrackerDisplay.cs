@@ -20,8 +20,8 @@ public class DriverTrackerDisplay(
     IOptions<LiveTimingOptions> options
 ) : IDisplay
 {
-    private const int IMAGE_PADDING = 25;
-    private const int TARGET_IMAGE_SIZE = 650;
+    private const int IMAGE_PADDING = 50;
+    private const int TARGET_IMAGE_SIZE = 1200;
     private const int LEFT_OFFSET = 17;
     private const int TOP_OFFSET = 0;
     private const int BOTTOM_OFFSET = 1;
@@ -29,12 +29,12 @@ public class DriverTrackerDisplay(
     private static readonly SKPaint _trackLinePaint = new()
     {
         Color = SKColor.Parse("666666"),
-        StrokeWidth = 4,
+        StrokeWidth = 6,
     };
     private static readonly SKPaint _cornerTextPaint = new()
     {
         Color = SKColor.Parse("DDDDDD"),
-        TextSize = 14,
+        TextSize = 18,
         Typeface = SKTypeface.FromFamilyName(
             "Consolas",
             weight: SKFontStyleWeight.SemiBold,
@@ -270,7 +270,7 @@ public class DriverTrackerDisplay(
                     var paint = new SKPaint
                     {
                         Color = SKColor.Parse(data.TeamColour),
-                        TextSize = 14,
+                        TextSize = 18,
                         Typeface = _boldTypeface,
                     };
 
@@ -278,7 +278,7 @@ public class DriverTrackerDisplay(
                     if (timingData.Latest.Lines[driverNumber].Line == state.CursorOffset)
                     {
                         var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
-                        canvas.DrawRoundRect(x - 6, y - 8, 46, 16, 4, 4, rectPaint);
+                        canvas.DrawRoundRect(x - 8, y - 10, 56, 20, 4, 4, rectPaint);
                     }
 
                     canvas.DrawCircle(x, y, 5, paint);
