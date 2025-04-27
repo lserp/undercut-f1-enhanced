@@ -138,7 +138,7 @@ There are however some utilities that may need to be installed for some function
 - Team Radio audio playback uses [NetCoreAudio](https://github.com/mobiletechtracker/NetCoreAudio) for playback. See their [Prerequisites](https://github.com/mobiletechtracker/NetCoreAudio#prerequisites) for information if playback does not work.
   - On Linux, you need `mpg123` available on the `PATH`. For apt-based systems, you can install with `apt install mpg123`
   - Windows and Mac _should_ work out of the box
-- Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See https://www.ffmpeg.org/download.html) for details on how to instal.
+- Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See <https://www.ffmpeg.org/download.html>) for details on how to instal.
   - On Linux apt-based systems, you can install with `apt install ffmpeg`
   - On Mac with brew, you can install with `brew install ffmpeg`
   - On Windows with WinGet, you can install with `winget install ffmpeg`
@@ -294,7 +294,7 @@ UndercutF1 tries to adhere the Windows and XDG standards as much as possible. By
 | Data        | `$env:LOCALAPPDATA/undercut-f1/data`   | `$XDG_DATA_HOME/undercut-f1/data`          | `~/.local/share/undercut-f1/data`   |
 | Logs        | `$env:LOCALAPPDATA/undercut-f1/logs`   | `$XDG_STATE_HOME/undercut-f1/logs`         | `~/.local/state/undercut-f1/logs`   |
 
-Data and Logs paths can be configured as [described above](#configuration). 
+Data and Logs paths can be configured as [described above](#configuration).
 The config file location cannot be modified, and will always be read from the above location.
 
 ## Logging
