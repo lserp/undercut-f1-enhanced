@@ -42,6 +42,7 @@ Feature Highlights:
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Install and run as a dotnet tool](#install-and-run-as-a-dotnet-tool)
+    - [Install from Homebrew](#install-from-homebrew)
     - [Install and run the standalone executable](#install-and-run-the-standalone-executable)
     - [Run using the docker image](#run-using-the-docker-image)
       - [Known Issues with Docker](#known-issues-with-docker)
@@ -158,6 +159,19 @@ undercutf1
 ```
 
 This method is recommended as it is easy to keep the app updated using `dotnet tool update -g undercutf1`. You'll need the .NET 9 SDK installed to use this installation method. If you'd rather not install the SDK, try the [standalone installation option below](#install-and-run-the-standalone-executable).
+
+#### Install from Homebrew
+
+`undercutf1` is available as a formula from `brew` which means it can be installed system-wide (on Mac and Linux) simply by running:
+
+```sh
+brew install undercutf1
+
+# Execute undercutf1 to start the TUI
+undercutf1
+```
+
+This method is recommended as it is easy to keep the app updated using `brew upgrade`. Note that installing using `brew` will also install the `dotnet` formula. If you develop on your machine using the dotnet-sdk, and have the sdk installed through a non-brew method (e.g. directly from MS or via VSCode), I would recommend avoiding this installation method as the brew `dotnet` installation can conflict with your own installation due to differences in how `dotnet` is signed via brew.
 
 #### Install and run the standalone executable
 
