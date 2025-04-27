@@ -6,22 +6,9 @@ using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public class DriverTrackerDisplay(
-    State state,
-    TimingDataProcessor timingData,
-    DriverListProcessor driverList,
-    PositionDataProcessor positionData,
-    CarDataProcessor carData,
-    SessionInfoProcessor sessionInfo,
-    TrackStatusProcessor trackStatus,
-    ExtrapolatedClockProcessor extrapolatedClock,
-    IDateTimeProvider dateTimeProvider,
-    TerminalInfoProvider terminalInfo,
-    IOptions<LiveTimingOptions> options
-) : IDisplay
+public class DriverTrackerDisplay : IDisplay
 {
     private const int IMAGE_PADDING = 50;
-    private const int TARGET_IMAGE_SIZE = 1200;
     private const int LEFT_OFFSET = 17;
     private const int TOP_OFFSET = 0;
     private const int BOTTOM_OFFSET = 1;
@@ -29,7 +16,7 @@ public class DriverTrackerDisplay(
     private static readonly SKPaint _trackLinePaint = new()
     {
         Color = SKColor.Parse("666666"),
-        StrokeWidth = 6,
+        StrokeWidth = 5,
     };
     private static readonly SKPaint _cornerTextPaint = new()
     {
@@ -55,9 +42,50 @@ public class DriverTrackerDisplay(
         slant: SKFontStyleSlant.Upright
     );
 
+    private readonly State _state;
+    private readonly TimingDataProcessor _timingData;
+    private readonly DriverListProcessor _driverList;
+    private readonly PositionDataProcessor _positionData;
+    private readonly CarDataProcessor _carData;
+    private readonly SessionInfoProcessor _sessionInfo;
+    private readonly TrackStatusProcessor _trackStatus;
+    private readonly ExtrapolatedClockProcessor _extrapolatedClock;
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly TerminalInfoProvider _terminalInfo;
+    private readonly IOptions<LiveTimingOptions> _options;
     private TransformFactors? _transform = null;
 
     private string[] _trackMapControlSequence = [];
+
+    public DriverTrackerDisplay(
+        State state,
+        TimingDataProcessor timingData,
+        DriverListProcessor driverList,
+        PositionDataProcessor positionData,
+        CarDataProcessor carData,
+        SessionInfoProcessor sessionInfo,
+        TrackStatusProcessor trackStatus,
+        ExtrapolatedClockProcessor extrapolatedClock,
+        IDateTimeProvider dateTimeProvider,
+        TerminalInfoProvider terminalInfo,
+        IOptions<LiveTimingOptions> options
+    )
+    {
+        _state = state;
+        _timingData = timingData;
+        _driverList = driverList;
+        _positionData = positionData;
+        _carData = carData;
+        _sessionInfo = sessionInfo;
+        _trackStatus = trackStatus;
+        _extrapolatedClock = extrapolatedClock;
+        _dateTimeProvider = dateTimeProvider;
+        _terminalInfo = terminalInfo;
+        _options = options;
+
+        // The transform factors are dependant on the size of the terminal, so force a recalc if the size changes
+        Terminal.Resized += (_size) => _transform = null;
+    }
 
     public Screen Screen => Screen.DriverTracker;
 
@@ -65,8 +93,8 @@ public class DriverTrackerDisplay(
     {
         var trackMapMessage = string.Empty;
         if (
-            !terminalInfo.IsITerm2ProtocolSupported.Value
-            && !terminalInfo.IsKittyProtocolSupported.Value
+            !_terminalInfo.IsITerm2ProtocolSupported.Value
+            && !_terminalInfo.IsKittyProtocolSupported.Value
         )
         {
             // We don't think the current terminal supports the iTerm2 graphics protocol
@@ -109,31 +137,33 @@ public class DriverTrackerDisplay(
             .NoSafeBorder()
             .RemoveColumnPadding();
 
-        var comparisonDataPoint = timingData.Latest.Lines.FirstOrDefault(x =>
-            x.Value.Line == state.CursorOffset
+        var comparisonDataPoint = _timingData.Latest.Lines.FirstOrDefault(x =>
+            x.Value.Line == _state.CursorOffset
         );
 
-        foreach (var (driverNumber, line) in timingData.Latest.GetOrderedLines())
+        foreach (var (driverNumber, line) in _timingData.Latest.GetOrderedLines())
         {
-            var driver = driverList.Latest?.GetValueOrDefault(driverNumber) ?? new();
-            var car = carData.Latest.Entries.FirstOrDefault()?.Cars.GetValueOrDefault(driverNumber);
+            var driver = _driverList.Latest?.GetValueOrDefault(driverNumber) ?? new();
+            var car = _carData
+                .Latest.Entries.FirstOrDefault()
+                ?.Cars.GetValueOrDefault(driverNumber);
             var isComparisonLine = line == comparisonDataPoint.Value;
 
             var driverTag = DisplayUtils.MarkedUpDriverNumber(driver);
             var decoration = Decoration.None;
-            if (!state.SelectedDrivers.Contains(driverNumber))
+            if (!_state.SelectedDrivers.Contains(driverNumber))
             {
                 driverTag = $"[dim]{driverTag}[/]";
                 decoration |= Decoration.Dim;
             }
 
-            driverTag = state.CursorOffset == line.Line ? $">{driverTag}<" : $" {driverTag} ";
+            driverTag = _state.CursorOffset == line.Line ? $">{driverTag}<" : $" {driverTag} ";
 
-            if (sessionInfo.Latest.IsRace())
+            if (_sessionInfo.Latest.IsRace())
             {
                 table.AddRow(
                     new Markup(driverTag),
-                    state.CursorOffset > 0
+                    _state.CursorOffset > 0
                         ? DisplayUtils.GetGapBetweenLines(
                             comparisonDataPoint.Value,
                             line,
@@ -154,9 +184,9 @@ public class DriverTrackerDisplay(
             }
             else
             {
-                var bestDriver = timingData.Latest.GetOrderedLines().First();
+                var bestDriver = _timingData.Latest.GetOrderedLines().First();
                 var position =
-                    positionData
+                    _positionData
                         .Latest.Position.LastOrDefault()
                         ?.Entries.GetValueOrDefault(driverNumber) ?? new();
                 var gapToLeader = (
@@ -185,9 +215,9 @@ public class DriverTrackerDisplay(
     {
         var items = new List<IRenderable>();
 
-        if (trackStatus.Latest is not null)
+        if (_trackStatus.Latest is not null)
         {
-            var style = trackStatus.Latest.Status switch
+            var style = _trackStatus.Latest.Status switch
             {
                 "1" => DisplayUtils.STYLE_PB, // All Clear
                 "2" => new Style(foreground: Color.Black, background: Color.Yellow), // Yellow Flag
@@ -196,11 +226,11 @@ public class DriverTrackerDisplay(
                 "5" => new Style(foreground: Color.White, background: Color.Red), // Red Flag
                 _ => Style.Plain,
             };
-            items.Add(new Text($"{trackStatus.Latest.Message}", style));
+            items.Add(new Text($"{_trackStatus.Latest.Message}", style));
         }
 
-        items.Add(new Text($@"{dateTimeProvider.Utc:HH\:mm\:ss}"));
-        items.Add(new Text($@"{extrapolatedClock.ExtrapolatedRemaining():hh\:mm\:ss}"));
+        items.Add(new Text($@"{_dateTimeProvider.Utc:HH\:mm\:ss}"));
+        items.Add(new Text($@"{_extrapolatedClock.ExtrapolatedRemaining():hh\:mm\:ss}"));
 
         var rows = new Rows(items);
         return new Panel(rows)
@@ -215,10 +245,10 @@ public class DriverTrackerDisplay(
     {
         if (
             !(
-                terminalInfo.IsITerm2ProtocolSupported.Value
-                || terminalInfo.IsKittyProtocolSupported.Value
+                _terminalInfo.IsITerm2ProtocolSupported.Value
+                || _terminalInfo.IsKittyProtocolSupported.Value
             )
-            || sessionInfo.Latest.CircuitPoints.Count == 0
+            || _sessionInfo.Latest.CircuitPoints.Count == 0
         )
         {
             return [];
@@ -229,7 +259,7 @@ public class DriverTrackerDisplay(
         var surface = SKSurface.Create(new SKImageInfo(_transform.MaxX, _transform.MaxY));
         var canvas = surface.Canvas;
 
-        var circuitPoints = sessionInfo.Latest.CircuitPoints.Select(x =>
+        var circuitPoints = _sessionInfo.Latest.CircuitPoints.Select(x =>
             TransformPoint(x, _transform)
         );
         // Draw lines between all the points of the track to create the track map
@@ -241,7 +271,7 @@ public class DriverTrackerDisplay(
             }
         );
 
-        var circuitCorners = sessionInfo.Latest.CircuitCorners.Select(p =>
+        var circuitCorners = _sessionInfo.Latest.CircuitCorners.Select(p =>
         {
             var (x, y) = TransformPoint(((int)p.x, (int)p.y), _transform);
             return (p.number, x, y);
@@ -254,14 +284,14 @@ public class DriverTrackerDisplay(
         }
 
         // Add all the selected drivers positions to the map
-        foreach (var (driverNumber, data) in driverList.Latest)
+        foreach (var (driverNumber, data) in _driverList.Latest)
         {
-            var position = positionData
+            var position = _positionData
                 .Latest.Position.LastOrDefault()
                 ?.Entries.GetValueOrDefault(driverNumber);
             if (position is not null && position.X.HasValue && position.Y.HasValue)
             {
-                if (state.SelectedDrivers.Contains(driverNumber))
+                if (_state.SelectedDrivers.Contains(driverNumber))
                 {
                     var (x, y) = TransformPoint(
                         (x: position.X.Value, y: position.Y.Value),
@@ -275,7 +305,7 @@ public class DriverTrackerDisplay(
                     };
 
                     // Draw a white box around the driver currently selected by the cursor
-                    if (timingData.Latest.Lines[driverNumber].Line == state.CursorOffset)
+                    if (_timingData.Latest.Lines[driverNumber].Line == _state.CursorOffset)
                     {
                         var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
                         canvas.DrawRoundRect(x - 8, y - 10, 56, 20, 4, 4, rectPaint);
@@ -308,18 +338,18 @@ public class DriverTrackerDisplay(
             windowWidth = (int)Math.Ceiling(windowHeight * 2.2 * targetAspectRatio);
         }
 
-        if (options.Value.Verbose)
+        if (_options.Value.Verbose)
         {
             // Add some debug information when verbose mode is on
             canvas.DrawRect(0, 0, _transform.MaxX - 1, _transform.MaxY - 1, _errorPaint);
             canvas.DrawText(
-                $"iTerm2 Support: {terminalInfo.IsITerm2ProtocolSupported.Value}",
+                $"iTerm2 Support: {_terminalInfo.IsITerm2ProtocolSupported.Value}",
                 5,
                 20,
                 _errorPaint
             );
             canvas.DrawText(
-                $"Kitty Support: {terminalInfo.IsKittyProtocolSupported.Value}",
+                $"Kitty Support: {_terminalInfo.IsKittyProtocolSupported.Value}",
                 5,
                 40,
                 _errorPaint
@@ -331,7 +361,7 @@ public class DriverTrackerDisplay(
                 _errorPaint
             );
             canvas.DrawText(
-                $"Synchronized Output Support: {terminalInfo.IsSynchronizedOutputSupported}",
+                $"Synchronized Output Support: {_terminalInfo.IsSynchronizedOutputSupported}",
                 5,
                 80,
                 _errorPaint
@@ -343,7 +373,7 @@ public class DriverTrackerDisplay(
         var imageData = surface.Snapshot().Encode();
         var base64 = Convert.ToBase64String(imageData.AsSpan());
 
-        if (terminalInfo.IsKittyProtocolSupported.Value)
+        if (_terminalInfo.IsKittyProtocolSupported.Value)
         {
             return
             [
@@ -351,7 +381,7 @@ public class DriverTrackerDisplay(
                 .. TerminalGraphics.KittyGraphicsSequence(windowHeight, windowWidth, base64),
             ];
         }
-        else if (terminalInfo.IsITerm2ProtocolSupported.Value)
+        else if (_terminalInfo.IsITerm2ProtocolSupported.Value)
         {
             return [TerminalGraphics.ITerm2GraphicsSequence(windowHeight, windowWidth, base64)];
         }
@@ -361,7 +391,7 @@ public class DriverTrackerDisplay(
 
     private TransformFactors GetTransformFactors()
     {
-        var circuitPoints = sessionInfo.Latest.CircuitPoints;
+        var circuitPoints = _sessionInfo.Latest.CircuitPoints;
 
         // Shift all points in to positive coordinates
         var minX = circuitPoints.Min(x => x.x);
@@ -371,7 +401,16 @@ public class DriverTrackerDisplay(
 
         var maxX = circuitPoints.Max(x => x.x);
         var maxY = circuitPoints.Max(x => x.y);
-        var imageScaleFactor = Math.Max(maxX / TARGET_IMAGE_SIZE, maxY / TARGET_IMAGE_SIZE);
+
+        // For high DPI values, target half the screen height for the image. This is because the terminal is likely giving us the real height in pixels.
+        // If we get a lower DPI, the tarminal is likely giving us the scaled pixel height (i.e. points) so use it directly.
+        // Here DPI really means pixels per character cell
+        var windowHeightPx = _terminalInfo.TerminalSize.Value?.Height ?? 1200;
+        var screenDpi = windowHeightPx / Terminal.Size.Height;
+        var targetHeight = screenDpi > 35 ? windowHeightPx / 2 : windowHeightPx;
+        targetHeight -= TOP_OFFSET + BOTTOM_OFFSET;
+
+        var imageScaleFactor = maxY / targetHeight;
 
         return new(
             ScaleFactor: imageScaleFactor,
