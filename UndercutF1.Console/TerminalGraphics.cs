@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace UndercutF1.Console;
 
 /// <summary>
@@ -15,6 +17,10 @@ public static class TerminalGraphics
     private const string ESCAPE_APC = "\u001B_G"; // Begins an Application Programming Command
     private const string ESCAPE_ST = "\u001B\\"; // String Terminator
 
+    private static readonly string EncodedFileName = Convert.ToBase64String(
+        Encoding.ASCII.GetBytes("drivertracker.png")
+    );
+
     /// <summary>
     /// Given a base64 encoded string of the PNG file,
     /// returns the control sequence for displaying that image in the terminal.
@@ -29,7 +35,7 @@ public static class TerminalGraphics
     {
         var args = new string[]
         {
-            "name=drivertracker",
+            $"name={EncodedFileName}",
             $"width={width}",
             $"height={height}",
             "preserveAspectRatio=0",
