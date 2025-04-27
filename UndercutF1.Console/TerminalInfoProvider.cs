@@ -71,6 +71,7 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetKittyProtocolSupported()
     {
+        PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
@@ -111,6 +112,7 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+            CleanupTerminal();
         }
     }
 
@@ -146,7 +148,9 @@ public sealed partial class TerminalInfoProvider
                 Util.Sanitize(str)
             );
 
-            if (match.Success && !str.Contains("\u001B[?6"))
+            // DECRQM response with \e[? as well, so ignore first 3 chars then check for \e[? again to see if we've
+            // already read the device attribute query
+            if (match.Success && !str[3..].Contains("\u001B[?"))
             {
                 DiscardExtraResponse();
             }
@@ -166,6 +170,7 @@ public sealed partial class TerminalInfoProvider
 
     private (int Height, int Width)? GetTerminalSize()
     {
+        PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
@@ -209,6 +214,27 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+            CleanupTerminal();
+        }
+    }
+
+    /// <summary>
+    /// Prepares the terminal to get it in to a state where it will definitely respond to queries.
+    /// Some terminals will not respond to queries if in the middle of a synchronized update.
+    /// </summary>
+    private void PrepareTerminal()
+    {
+        if (IsSynchronizedOutputSupported.Value)
+        {
+            Terminal.Out(TerminalGraphics.EndSynchronizedUpdate());
+        }
+    }
+
+    private void CleanupTerminal()
+    {
+        if (IsSynchronizedOutputSupported.Value)
+        {
+            Terminal.Out(TerminalGraphics.BeginSynchronizedUpdate());
         }
     }
 
