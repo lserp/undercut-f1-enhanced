@@ -94,7 +94,7 @@ The `Race Control` page shows all Race Control Messages for the session, along w
 
 ### Driver Tracker
 
-The `Driver Tracker` page shows a track map overlayed with selected drivers. Use the <kbd>▼</kbd>/<kbd>▲</kbd> `Cursor` actions to choose drivers, then use the <kbd>⏎</kbd> `Toggle Select` action to toggle the inclusion of the driver on the track map. The driver under the current cursor position will also be highlighted on the map, and timing gaps will switch to interval between that driver and all other drivers.
+The `Driver Tracker` page shows a track map overlaid with selected drivers. Use the <kbd>▼</kbd>/<kbd>▲</kbd> `Cursor` actions to choose drivers, then use the <kbd>⏎</kbd> `Toggle Select` action to toggle the inclusion of the driver on the track map. The driver under the current cursor position will also be highlighted on the map, and timing gaps will switch to interval between that driver and all other drivers.
 
 ![Driver Tracker Page](docs/screenshots/driver-tracker.png)
 
@@ -138,7 +138,7 @@ There are however some utilities that may need to be installed for some function
 - Team Radio audio playback uses [NetCoreAudio](https://github.com/mobiletechtracker/NetCoreAudio) for playback. See their [Prerequisites](https://github.com/mobiletechtracker/NetCoreAudio#prerequisites) for information if playback does not work.
   - On Linux, you need `mpg123` available on the `PATH`. For apt-based systems, you can install with `apt install mpg123`
   - Windows and Mac _should_ work out of the box
-- Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See <https://www.ffmpeg.org/download.html>) for details on how to instal.
+- Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See <https://www.ffmpeg.org/download.html>) for details on how to install.
   - On Linux apt-based systems, you can install with `apt install ffmpeg`
   - On Mac with brew, you can install with `brew install ffmpeg`
   - On Windows with WinGet, you can install with `winget install ffmpeg`

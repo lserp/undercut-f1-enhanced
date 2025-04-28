@@ -337,7 +337,7 @@ public class DriverTrackerDisplay(
                 _errorPaint
             );
             canvas.DrawText($"Image Scale factor: {_transform.ScaleFactor}", 5, 100, _errorPaint);
-            canvas.DrawText($"Tranforms: {_transform}", 5, 120, _errorPaint);
+            canvas.DrawText($"Transforms: {_transform}", 5, 120, _errorPaint);
         }
 
         var imageData = surface.Snapshot().Encode();
