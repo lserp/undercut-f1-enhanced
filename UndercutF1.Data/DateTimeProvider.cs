@@ -19,7 +19,7 @@ public class DateTimeProvider(ILogger<DateTimeProvider> logger) : IDateTimeProvi
             var oldDelay = Delay;
 
             // To resume, we need to update the Delay to account for how long we've been paused for
-            // When resuming, calcualte what the delay should be based on the current time
+            // When resuming, calculate what the delay should be based on the current time
             Delay = DateTimeOffset.UtcNow - PausedAt.Value;
 
             logger.LogInformation(
