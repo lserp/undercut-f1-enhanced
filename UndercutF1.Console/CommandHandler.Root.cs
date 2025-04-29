@@ -14,7 +14,8 @@ public static partial class CommandHandler
         DirectoryInfo? dataDirectory,
         DirectoryInfo? logDirectory,
         bool isVerbose,
-        bool? notifyEnabled
+        bool? notifyEnabled,
+        bool? preferFfmpeg
     )
     {
         var builder = GetBuilder(
@@ -22,7 +23,8 @@ public static partial class CommandHandler
             dataDirectory: dataDirectory,
             logDirectory: logDirectory,
             isVerbose: isVerbose,
-            notifyEnabled: notifyEnabled
+            notifyEnabled: notifyEnabled,
+            preferFfmpeg: preferFfmpeg
         );
 
         builder

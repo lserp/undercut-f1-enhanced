@@ -26,12 +26,17 @@ var notifyOption = new Option<bool?>(
     "--notify",
     "Whether audible BELs are sent to your terminal when new race control messages are received"
 );
+var preferFfmpegOption = new Option<bool?>(
+    "--prefer-ffmpeg",
+    "Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123. `ffplay` is always used on Windows"
+);
 
 rootCommand.AddGlobalOption(isVerboseOption);
 rootCommand.AddGlobalOption(isApiEnabledOption);
 rootCommand.AddGlobalOption(dataDirectoryOption);
 rootCommand.AddGlobalOption(logDirectoryOption);
 rootCommand.AddGlobalOption(notifyOption);
+rootCommand.AddGlobalOption(preferFfmpegOption);
 
 rootCommand.SetHandler(
     CommandHandler.Root,
@@ -39,7 +44,8 @@ rootCommand.SetHandler(
     dataDirectoryOption,
     logDirectoryOption,
     isVerboseOption,
-    notifyOption
+    notifyOption,
+    preferFfmpegOption
 );
 
 var importCommand = new Command(

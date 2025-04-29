@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Options;
+using UndercutF1.Data;
+
 namespace UndercutF1.Console.Audio;
 
-public class AudioPlayer(ILogger<AudioPlayer> logger)
+public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlayer> logger)
 {
     private ChildProcess? _process = null;
 
@@ -10,15 +13,7 @@ public class AudioPlayer(ILogger<AudioPlayer> logger)
 
     public void Play(string filePath)
     {
-        if (OperatingSystem.IsMacOS())
-        {
-            _process = Run("afplay", filePath);
-        }
-        else if (OperatingSystem.IsLinux())
-        {
-            _process = Run("mpg123", filePath, "--no-control");
-        }
-        else if (OperatingSystem.IsWindows())
+        if (options.Value.PreferFfmpegPlayback || OperatingSystem.IsWindows())
         {
             _process = Run(
                 "ffplay",
@@ -28,6 +23,14 @@ public class AudioPlayer(ILogger<AudioPlayer> logger)
                 "-hide_banner",
                 "-loglevel error"
             );
+        }
+        else if (OperatingSystem.IsMacOS())
+        {
+            _process = Run("afplay", filePath);
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            _process = Run("mpg123", filePath, "--no-control");
         }
         else
         {

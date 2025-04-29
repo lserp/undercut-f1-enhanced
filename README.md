@@ -120,9 +120,7 @@ Charts on the right display how Gap to Leader and Lap Time for all selected driv
 
 Listen to team radio clips from anytime in the session, and use a local ML model (Whisper) to transcribe the audio on demand. Transcription accuracy is fairly low, depending on the that days audio quality and driver. Suggestions welcome for improving this!
 
-Audio playback prerequisites:
-
-- If on Linux, make sure you have `aplay` and `mpg123` installed. See [the NetCoreAudio Prerequisites for more details](https://github.com/mobiletechtracker/NetCoreAudio?tab=readme-ov-file#prerequisites)
+See [Prerequisites](#prerequisites) to ensure you are able to playback audio.
 
 ![Listen to and Transcribe Team Radio](docs/screenshots/team-radio.png)
 
@@ -135,9 +133,11 @@ Audio playback prerequisites:
 UndercutF1 tries to statically link as many dependencies as possible to make installation and usage easy.
 There are however some utilities that may need to be installed for some functionality:
 
-- Team Radio audio playback uses [NetCoreAudio](https://github.com/mobiletechtracker/NetCoreAudio) for playback. See their [Prerequisites](https://github.com/mobiletechtracker/NetCoreAudio#prerequisites) for information if playback does not work.
+- Team Radio audio playback uses platform-specific command-line executables to play audio files.
   - On Linux, you need `mpg123` available on the `PATH`. For apt-based systems, you can install with `apt install mpg123`
-  - Windows and Mac _should_ work out of the box
+  - On Mac, you need `afplay` available on the `PATH`. This should be installed by default.
+  - On Windows, we only support audio playback via FFmpeg (`ffplay`) - see below for installation instructions.
+  - On Linux/Mac, you can use the [`preferFfmpegPlayback` configuration](#configuration) to use `ffplay` instead of `mpg123`/`afplay`
 - Team Radio transcription relies on FFmpeg and Whisper. Whisper models are downloaded on demand (after user confirmation) in the app. See the [FFmpeg download page](See <https://www.ffmpeg.org/download.html>) for details on how to install.
   - On Linux apt-based systems, you can install with `apt install ffmpeg`
   - On Mac with brew, you can install with `brew install ffmpeg`
@@ -172,6 +172,8 @@ undercutf1
 ```
 
 This method is recommended as it is easy to keep the app updated using `brew upgrade`. Note that installing using `brew` will also install the `dotnet` formula. If you develop on your machine using the dotnet-sdk, and have the sdk installed through a non-brew method (e.g. directly from MS or via VSCode), I would recommend avoiding this installation method as the brew `dotnet` installation can conflict with your own installation due to differences in how `dotnet` is signed via brew.
+
+The brew installation method will also install all the mentioned [prerequisites](#prerequisites) for you.
 
 #### Install and run the standalone executable
 
@@ -276,13 +278,14 @@ UndercutF1 can be configured using either a simple `config.json` file, through t
 
 To view what configuration is currently being used, open the <kbd>I</kbd> `Info` screen when the app starts up.
 
-| JSON Path       | Command Line       | Environment Variable       | Description                                                                                                                                                               |
-| --------------- | ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataDirectory` | `--data-directory` | `UNDERCUTF1_DATADIRECTORY` | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription. |
-| `logDirectory`  | `--log-directory`  | `UNDERCUTF1_LOGDIRECTORY`  | The directory to which logs are written to.                                                                                                                               |
-| `verbose`       | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`       | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                   |
-| `apiEnabled`    | `--with-api`       | `UNDERCUTF1_APIENABLED`    | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                            |
-| `notify`        | `--notify`         | `UNDERCUTF1_NOTIFY`        | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                        |
+| JSON Path              | Command Line       | Environment Variable              | Description                                                                                                                                                                               |
+| ---------------------- | ------------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataDirectory`        | `--data-directory` | `UNDERCUTF1_DATADIRECTORY`        | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription.                 |
+| `logDirectory`         | `--log-directory`  | `UNDERCUTF1_LOGDIRECTORY`         | The directory to which logs are written to.                                                                                                                                               |
+| `verbose`              | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`              | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                                   |
+| `apiEnabled`           | `--with-api`       | `UNDERCUTF1_APIENABLED`           | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                                            |
+| `notify`               | `--notify`         | `UNDERCUTF1_NOTIFY`               | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                                        |
+| `preferFfmpegPlayback` | `--prefer-ffmpeg`  | `UNDERCUTF1_PREFERFFMPEGPLAYBACK` | Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123 respectively. `ffplay` is always used on Windows. Default: `false`. Values: `true` or `false`. |
 
 ### Default Directories
 
