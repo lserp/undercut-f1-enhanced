@@ -219,7 +219,8 @@ public class ConsoleLoop(
                     inputBuffer,
                     out var keyChar,
                     out var consoleKey,
-                    out var modifiers
+                    out var modifiers,
+                    out var times
                 )
             )
             {
@@ -232,6 +233,8 @@ public class ConsoleLoop(
                             || x.ApplicableScreens.Contains(state.CurrentScreen)
                         )
                     )
+                    // Repeat the input handlers for duplicate key presses
+                    .SelectMany(x => Enumerable.Range(0, times).Select(_ => x))
                     .Select(x =>
                     {
                         try
@@ -294,9 +297,12 @@ public class ConsoleLoop(
         byte[] bytes,
         out char keyChar,
         out ConsoleKey consoleKey,
-        out ConsoleModifiers modifiers
+        out ConsoleModifiers modifiers,
+        out int times
     )
     {
+        times = 1;
+
         switch (bytes)
         {
             case [ESC, CSI, ..]: // An ANSI escape sequence starting with a CSI (Control Sequence Introducer)
@@ -377,10 +383,12 @@ public class ConsoleLoop(
             case [ESC, ..]:
                 logger.LogInformation("Unknown esc sequence: {Seq}", string.Join('|', bytes[1..]));
                 break;
-            case [var key, ..]: // Just a normal key press
+            case [var key, .. var remaining]: // Just a normal key press
                 keyChar = (char)key;
                 consoleKey = (ConsoleKey)char.ToUpperInvariant(keyChar);
                 modifiers = char.IsUpper(keyChar) ? ConsoleModifiers.Shift : ConsoleModifiers.None;
+                // How many duplicate presses of the key are there. This indicates a key being held down, so repeat the action
+                times = 1 + remaining.Count(k => k == key);
                 return true;
             default:
                 logger.LogInformation("Unknown input: {Input}", string.Join('|', bytes));
