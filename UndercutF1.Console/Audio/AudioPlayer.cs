@@ -17,11 +17,12 @@ public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlaye
         {
             _process = Run(
                 "ffplay",
-                filePath,
                 "-nodisp",
                 "-autoexit",
                 "-hide_banner",
-                "-loglevel error"
+                "-loglevel",
+                "error",
+                filePath
             );
         }
         else if (OperatingSystem.IsMacOS())
@@ -57,9 +58,9 @@ public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlaye
     private ChildProcess Run(string executable, params string[] args)
     {
         logger.LogDebug(
-            "Beginning audio playback of '{FileName}' with executable {Executable}",
-            args[0],
-            executable
+            "Beginning audio playback with executable {Executable}, arguments: {Arguments}",
+            executable,
+            string.Join(' ', args)
         );
         var process = new ChildProcessBuilder()
             .WithFileName(executable)
