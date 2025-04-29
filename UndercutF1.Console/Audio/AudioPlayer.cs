@@ -30,7 +30,7 @@ public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlaye
         }
         else if (OperatingSystem.IsLinux())
         {
-            _process = Run("mpg123", filePath, "--no-control");
+            _process = Run("mpg123", "--no-control", "--no-visual", "--quiet", filePath);
         }
         else
         {
