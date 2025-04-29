@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.OpenApi.Models;
+using UndercutF1.Console.Audio;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
@@ -31,6 +32,7 @@ public static partial class CommandHandler
             .AddDisplays()
             .AddSingleton<INotifyHandler, NotifyHandler>()
             .AddSingleton<TerminalInfoProvider>()
+            .AddSingleton<AudioPlayer>()
             .AddHostedService(sp => sp.GetRequiredService<ConsoleLoop>());
 
         var options = builder.Configuration.Get<LiveTimingOptions>() ?? new();

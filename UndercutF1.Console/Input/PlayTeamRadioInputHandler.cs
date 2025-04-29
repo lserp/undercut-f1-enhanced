@@ -1,10 +1,13 @@
-using NetCoreAudio;
+using UndercutF1.Console.Audio;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public sealed class PlayTeamRadioInputHandler(State state, TeamRadioProcessor teamRadio)
-    : IInputHandler
+public sealed class PlayTeamRadioInputHandler(
+    AudioPlayer audioPlayer,
+    State state,
+    TeamRadioProcessor teamRadio
+) : IInputHandler
 {
     public bool IsEnabled => true;
 
@@ -12,20 +15,21 @@ public sealed class PlayTeamRadioInputHandler(State state, TeamRadioProcessor te
 
     public ConsoleKey[] Keys => [ConsoleKey.Enter];
 
-    public string Description => _player.Playing ? "[olive]⏹ Stop[/]" : "► Play Radio";
+    public string Description =>
+        audioPlayer.Playing ? "[olive]⏹ Stop[/]"
+        : audioPlayer.Errored ? "[red]Playback Error[/]"
+        : "► Play Radio";
 
     public int Sort => 40;
-
-    private readonly Player _player = new Player();
 
     public async Task ExecuteAsync(
         ConsoleKeyInfo consoleKeyInfo,
         CancellationToken cancellationToken = default
     )
     {
-        if (_player.Playing)
+        if (audioPlayer.Playing)
         {
-            await _player.Stop();
+            audioPlayer.Stop();
         }
         else
         {
@@ -40,6 +44,6 @@ public sealed class PlayTeamRadioInputHandler(State state, TeamRadioProcessor te
             radio.Key,
             cancellationToken
         );
-        await _player.Play(destFileName);
+        audioPlayer.Play(destFileName);
     }
 }
