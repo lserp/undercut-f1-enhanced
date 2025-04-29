@@ -16,6 +16,9 @@ public sealed partial class TerminalInfoProvider
     [GeneratedRegex(@"\u001B\[\?2026;(\d+)\$y")]
     private static partial Regex TerminalSynchronizedOutputResponseRegex();
 
+    [GeneratedRegex(@"\u001B\[4;(\d+);(\d+)t")]
+    private static partial Regex TerminalSizeResponseRegex();
+
     /// <summary>
     /// Returns <see langword="true" /> if the current terminal supports the iTerm 2 Graphics Protocol.
     /// This is done in a very rudimentary way, and is by no means comprehensive.
@@ -37,12 +40,23 @@ public sealed partial class TerminalInfoProvider
     /// </summary>
     public Lazy<bool> IsSynchronizedOutputSupported { get; }
 
+    /// <summary>
+    /// Returns the size of the terminal in pizels. <c>null</c> if terminal size could not be determined.
+    /// </summary>
+    public Lazy<(int Height, int Width)?> TerminalSize { get; private set; }
+
     public TerminalInfoProvider(ILogger<TerminalInfoProvider> logger)
     {
         _logger = logger;
         IsITerm2ProtocolSupported = new Lazy<bool>(GetIsITerm2ProtocolSupported);
         IsKittyProtocolSupported = new Lazy<bool>(GetKittyProtocolSupported);
         IsSynchronizedOutputSupported = new Lazy<bool>(GetSynchronizedOutputSupported);
+        TerminalSize = new Lazy<(int, int)?>(GetTerminalSize);
+        Terminal.Resized += (_new) =>
+        {
+            TerminalSize = new Lazy<(int, int)?>(GetTerminalSize);
+            _ = TerminalSize.Value;
+        };
     }
 
     private bool GetIsITerm2ProtocolSupported()
@@ -57,6 +71,7 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetKittyProtocolSupported()
     {
+        PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
@@ -97,6 +112,7 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+            CleanupTerminal();
         }
     }
 
@@ -132,7 +148,9 @@ public sealed partial class TerminalInfoProvider
                 Util.Sanitize(str)
             );
 
-            if (match.Success && !str.Contains("\u001B[?"))
+            // DECRQM response with \e[? as well, so ignore first 3 chars then check for \e[? again to see if we've
+            // already read the device attribute query
+            if (match.Success && !str[3..].Contains("\u001B[?"))
             {
                 DiscardExtraResponse();
             }
@@ -147,6 +165,76 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    private (int Height, int Width)? GetTerminalSize()
+    {
+        PrepareTerminal();
+        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        try
+        {
+            // Send a DCS query to the terminal to query terminal size
+            Terminal.Out("\u001B[14t");
+            // Also send a device attributes escape code, so that there is always something to read from stdin
+            Terminal.Out("\u001B[c");
+
+            // Expected response: <ESC> [ ; <height> ; <width> t
+            Terminal.Read(buffer);
+            var str = Encoding.ASCII.GetString(buffer);
+            var match = TerminalSizeResponseRegex().Match(str);
+
+            var height = 0;
+            var width = 0;
+            _ =
+                match.Success
+                && match.Groups.Count == 3
+                && int.TryParse(match.Groups[1].Captures[0].Value, out height)
+                && int.TryParse(match.Groups[2].Captures[0].Value, out width);
+
+            _logger.LogDebug(
+                "Terminal Size (px): {Height}, {Width}: {Response}",
+                height,
+                width,
+                Util.Sanitize(str)
+            );
+
+            if (!str.Contains("\u001B[?"))
+            {
+                DiscardExtraResponse();
+            }
+
+            return height > 0 && width > 0 ? (height, width) : null;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to fetch terminal size in pixels");
+            return null;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+            CleanupTerminal();
+        }
+    }
+
+    /// <summary>
+    /// Prepares the terminal to get it in to a state where it will definitely respond to queries.
+    /// Some terminals will not respond to queries if in the middle of a synchronized update.
+    /// </summary>
+    private void PrepareTerminal()
+    {
+        if (IsSynchronizedOutputSupported.Value)
+        {
+            Terminal.Out(TerminalGraphics.EndSynchronizedUpdate());
+        }
+    }
+
+    private void CleanupTerminal()
+    {
+        if (IsSynchronizedOutputSupported.Value)
+        {
+            Terminal.Out(TerminalGraphics.BeginSynchronizedUpdate());
         }
     }
 
