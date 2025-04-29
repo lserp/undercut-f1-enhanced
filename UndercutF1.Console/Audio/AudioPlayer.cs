@@ -45,7 +45,8 @@ public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlaye
     {
         if (_process is not null && !_process.Completion.IsCompleted)
         {
-            logger.LogDebug("Stopping audio playback {PID}", _process.Id);
+            logger.LogDebug("Stopping audio playback pid:{PID}", _process.Id);
+            _process.Kill();
         }
         else
         {
@@ -71,6 +72,20 @@ public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlaye
         return process;
     }
 
-    private void LogProcessException(Task failed) =>
-        logger.LogError(failed.Exception, "Audio playback failed, bad exit code");
+    private void LogProcessException(Task failed)
+    {
+        if (failed.Exception?.InnerException is ChildProcessErrorException ex && ex.ExitCode == 137)
+        {
+            // Exit code 137 is result of SIGKILL so ignore
+            logger.LogDebug(
+                failed.Exception,
+                "Audio Playback returned 137, considering this a non-error"
+            );
+            _process = null;
+        }
+        else
+        {
+            logger.LogError(failed.Exception, "Audio playback failed, bad exit code");
+        }
+    }
 }
