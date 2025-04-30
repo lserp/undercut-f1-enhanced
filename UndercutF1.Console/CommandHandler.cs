@@ -14,6 +14,7 @@ public static partial class CommandHandler
         DirectoryInfo? logDirectory = null,
         bool isVerbose = false,
         bool? notifyEnabled = null,
+        bool? preferFfmpeg = null,
         bool useConsoleLogging = false
     )
     {
@@ -39,6 +40,13 @@ public static partial class CommandHandler
         if (notifyEnabled is not null)
         {
             commandLineOpts.Add(nameof(LiveTimingOptions.Notify), notifyEnabled.ToString());
+        }
+        if (preferFfmpeg is not null)
+        {
+            commandLineOpts.Add(
+                nameof(LiveTimingOptions.PreferFfmpegPlayback),
+                preferFfmpeg.ToString()
+            );
         }
 
         builder

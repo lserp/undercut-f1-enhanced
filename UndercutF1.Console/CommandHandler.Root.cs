@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.OpenApi.Models;
+using UndercutF1.Console.Audio;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
@@ -13,7 +14,8 @@ public static partial class CommandHandler
         DirectoryInfo? dataDirectory,
         DirectoryInfo? logDirectory,
         bool isVerbose,
-        bool? notifyEnabled
+        bool? notifyEnabled,
+        bool? preferFfmpeg
     )
     {
         var builder = GetBuilder(
@@ -21,7 +23,8 @@ public static partial class CommandHandler
             dataDirectory: dataDirectory,
             logDirectory: logDirectory,
             isVerbose: isVerbose,
-            notifyEnabled: notifyEnabled
+            notifyEnabled: notifyEnabled,
+            preferFfmpeg: preferFfmpeg
         );
 
         builder
@@ -31,6 +34,7 @@ public static partial class CommandHandler
             .AddDisplays()
             .AddSingleton<INotifyHandler, NotifyHandler>()
             .AddSingleton<TerminalInfoProvider>()
+            .AddSingleton<AudioPlayer>()
             .AddHostedService(sp => sp.GetRequiredService<ConsoleLoop>());
 
         var options = builder.Configuration.Get<LiveTimingOptions>() ?? new();
