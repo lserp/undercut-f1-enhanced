@@ -8,7 +8,7 @@ namespace UndercutF1.Console;
 
 public class DriverTrackerDisplay : IDisplay
 {
-    private const int IMAGE_PADDING = 50;
+    private const int IMAGE_PADDING = 70;
     private const int LEFT_OFFSET = 17;
     private const int TOP_OFFSET = 0;
     private const int BOTTOM_OFFSET = 1;
@@ -16,12 +16,12 @@ public class DriverTrackerDisplay : IDisplay
     private static readonly SKPaint _trackLinePaint = new()
     {
         Color = SKColor.Parse("666666"),
-        StrokeWidth = 5,
+        StrokeWidth = 6,
     };
     private static readonly SKPaint _cornerTextPaint = new()
     {
         Color = SKColor.Parse("DDDDDD"),
-        TextSize = 18,
+        TextSize = 24,
         Typeface = SKTypeface.FromFamilyName(
             "Consolas",
             weight: SKFontStyleWeight.SemiBold,
@@ -300,7 +300,7 @@ public class DriverTrackerDisplay : IDisplay
                     var paint = new SKPaint
                     {
                         Color = SKColor.Parse(data.TeamColour),
-                        TextSize = 18,
+                        TextSize = 24,
                         Typeface = _boldTypeface,
                     };
 
@@ -308,21 +308,17 @@ public class DriverTrackerDisplay : IDisplay
                     if (_timingData.Latest.Lines[driverNumber].Line == _state.CursorOffset)
                     {
                         var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
-                        canvas.DrawRoundRect(x - 8, y - 10, 56, 20, 4, 4, rectPaint);
+                        canvas.DrawRoundRect(x - 8, y - 12, 65, 24, 4, 4, rectPaint);
                     }
 
                     canvas.DrawCircle(x, y, 5, paint);
-                    canvas.DrawText(data.Tla, x + 8, y + 6, paint);
+                    canvas.DrawText(data.Tla, x + 8, y + 8, paint);
                 }
             }
         }
 
         var windowHeight = Terminal.Size.Height - TOP_OFFSET - BOTTOM_OFFSET;
         var windowWidth = Terminal.Size.Width - LEFT_OFFSET;
-        // // Terminal protocols will distort the image, so provide height/width as the biggest square that will definitely fit
-        // var shortestWindowEdgeLength = Math.Min(windowWidth, windowHeight * 2);
-        // windowHeight = shortestWindowEdgeLength / 2;
-        // windowWidth = shortestWindowEdgeLength;
 
         var targetAspectRatio =
             Convert.ToDouble(_transform.MaxX) / Convert.ToDouble(_transform.MaxY);
