@@ -1,6 +1,7 @@
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using UndercutF1.Data;
+using Status = UndercutF1.Data.TimingDataPoint.Driver.StatusFlags;
 
 namespace UndercutF1.Console;
 
@@ -189,9 +190,9 @@ public class TimingTowerDisplay(
                 new TableColumn("BL S1") { Width = 15, Alignment = Justify.Left },
                 new TableColumn("BL S2") { Width = 15, Alignment = Justify.Left },
                 new TableColumn("BL S3") { Width = 15, Alignment = Justify.Left },
-                new TableColumn("S1") { Width = 7, Alignment = Justify.Left },
-                new TableColumn("S2") { Width = 7, Alignment = Justify.Left },
-                new TableColumn("S3") { Width = 7, Alignment = Justify.Left },
+                new TableColumn("S1") { Alignment = Justify.Left },
+                new TableColumn("S2") { Alignment = Justify.Left },
+                new TableColumn("S3") { Alignment = Justify.Left },
                 new TableColumn("Pit") { Width = 4, Alignment = Justify.Left },
                 new TableColumn("Tyre") { Width = 5, Alignment = Justify.Left }
             )
@@ -261,9 +262,9 @@ public class TimingTowerDisplay(
                     overrideStyle: true,
                     showDifference: true
                 ),
-                GetSectorMarkup(line.Sectors.GetValueOrDefault("0"), bestSector1),
-                GetSectorMarkup(line.Sectors.GetValueOrDefault("1"), bestSector2),
-                GetSectorMarkup(line.Sectors.GetValueOrDefault("2"), bestSector3),
+                GetSectorMarkup(line.Sectors.GetValueOrDefault("0")),
+                GetSectorMarkup(line.Sectors.GetValueOrDefault("1")),
+                GetSectorMarkup(line.Sectors.GetValueOrDefault("2")),
                 new Text(
                     line.InPit.GetValueOrDefault() ? "IN "
                         : line.PitOut.GetValueOrDefault() ? "OUT"
@@ -289,6 +290,25 @@ public class TimingTowerDisplay(
         bool showDifference = false
     )
     {
+        if (
+            bestSector is null
+            && string.IsNullOrWhiteSpace(time?.Value)
+            && time?.Segments is not null
+        )
+        {
+            // Display the segments instead of the sector time
+            var segments = time.Segments.Values.Select(segment =>
+                segment.Status.GetValueOrDefault() switch
+                {
+                    var s when s.HasFlag(Status.PitLane) => "[dim white]▪[/]",
+                    var s when s.HasFlag(Status.OverallBest) => $"[purple]▪[/]",
+                    var s when s.HasFlag(Status.PersonalBest) => $"[green]▪[/]",
+                    var s when s.HasFlag(Status.SegmentComplete) => "[yellow]▪[/]",
+                    _ => " ",
+                }
+            );
+            return new Markup(string.Concat(segments) + " ");
+        }
         var sector =
             $"[{GetStyle(time, bestSector, overrideStyle).ToMarkup()}]{time?.Value?.ToFixedWidth(6)}[/]";
 
@@ -299,7 +319,7 @@ public class TimingTowerDisplay(
             : string.Empty;
         return differenceToBest < TimeSpan.FromSeconds(10) && showDifference
             ? new Markup($"{sector}{difference}")
-            : new Markup($"{sector}");
+            : new Markup($"{sector} ");
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -183,7 +184,14 @@ public class TimingService(
                 {
                     if (line?["Sectors"] is null)
                         continue;
-                    line["Sectors"] = ArrayToIndexedDictionary(line["Sectors"]!);
+                    line["Sectors"] = ArrayToIndexedDictionary(line["Sectors"]);
+
+                    foreach (var (key, sector) in line["Sectors"]!.AsObject())
+                    {
+                        if (sector?["Segments"] is null)
+                            continue;
+                        sector["Segments"] = ArrayToIndexedDictionary(sector["Segments"]);
+                    }
                 }
                 SendToProcessor<TimingDataPoint>(json);
                 break;
