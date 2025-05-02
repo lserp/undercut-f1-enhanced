@@ -1,3 +1,5 @@
+using Whisper.net;
+
 namespace UndercutF1.Data;
 
 public sealed record TimingDataPoint : ILiveTimingDataPoint
@@ -69,6 +71,12 @@ public sealed record TimingDataPoint : ILiveTimingDataPoint
             public string? Value { get; set; }
             public bool? OverallFastest { get; set; }
             public bool? PersonalFastest { get; set; }
+            public Dictionary<int, Segment>? Segments { get; set; }
+
+            public sealed record Segment
+            {
+                public StatusFlags? Status { get; set; }
+            }
         }
 
         public sealed record BestLap
@@ -80,13 +88,22 @@ public sealed record TimingDataPoint : ILiveTimingDataPoint
         [Flags]
         public enum StatusFlags
         {
-            Unknown16 = 16,
-            Unknown64 = 64,
+            PersonalBest = 1,
+            OverallBest = 2,
+            /// <summary>
+            /// Went through this mini sector in the pit lane
+            /// </summary>
+            PitLane = 16,
 
             /// <summary>
             /// Set when the driver passes the chequered flag in quali or race sessions
             /// </summary>
             ChequeredFlag = 1024,
+
+            /// <summary>
+            /// Segment completed. If this is the only flag set, means a yellow segment.
+            /// </summary>
+            SegmentComplete = 2048,
         }
     }
 }

@@ -20,6 +20,11 @@ public class TimingDataPointConfiguration : Profile
             Dictionary<string, TimingDataPoint.Driver.LapSectorTime>
         >()
             .ConvertUsingDictionaryMerge();
+        CreateMap<
+            Dictionary<int, TimingDataPoint.Driver.LapSectorTime.Segment>,
+            Dictionary<int, TimingDataPoint.Driver.LapSectorTime.Segment>
+        >()
+            .ConvertUsingDictionaryMerge();
 
         CreateMap<TimingDataPoint.Driver, TimingDataPoint.Driver>()
             .ForAllMembers(opts => opts.Condition((_, _, member) => member != null));
@@ -28,6 +33,12 @@ public class TimingDataPointConfiguration : Profile
             .ForAllMembers(opts => opts.Condition((_, _, member) => member != null));
 
         CreateMap<TimingDataPoint.Driver.LapSectorTime, TimingDataPoint.Driver.LapSectorTime>()
+            .ForAllMembers(opts => opts.Condition((_, _, member) => member != null));
+
+        CreateMap<
+            TimingDataPoint.Driver.LapSectorTime.Segment,
+            TimingDataPoint.Driver.LapSectorTime.Segment
+        >()
             .ForAllMembers(opts => opts.Condition((_, _, member) => member != null));
     }
 }
