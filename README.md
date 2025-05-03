@@ -98,7 +98,8 @@ The `Driver Tracker` page shows a track map overlaid with selected drivers. Use 
 
 ![Driver Tracker Page](docs/screenshots/driver-tracker.png)
 
-NOTE: Currently the track map is only supported in the iTerm2 terminal (by implementing the [iTerm2's Inline Image Protocol](https://iterm2.com/documentation-images.html)), and terminals which implement the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/). Other protocols (such as Sixel) may be supported in the future. If the track map doesn't work in your terminal, please raise an issue and I will try and fix/implement support.
+> [!NOTE]  
+Currently the track map is only supported in terminal which support euther the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) or the [iTerm2 Inline Image Protocol](https://iterm2.com/documentation-images.html). I personally try to test on iTerm2, Ghostty, WezTerm, and Kitty. If the terminal you use doesn't work, please raise an issue and I'll try to implement support!
 
 ### Tyre Stint / Strategy
 
@@ -171,13 +172,13 @@ brew install undercutf1
 undercutf1
 ```
 
-This method is recommended as it is easy to keep the app updated using `brew upgrade`. Note that installing using `brew` will also install the `dotnet` formula. If you develop on your machine using the dotnet-sdk, and have the sdk installed through a non-brew method (e.g. directly from MS or via VSCode), I would recommend avoiding this installation method as the brew `dotnet` installation can conflict with your own installation due to differences in how `dotnet` is signed via brew.
+This method is recommended as it is easy to keep the app updated using `brew upgrade`. Note that installing using `brew` will also install the `dotnet` formula. If you develop on your machine using the dotnet-sdk, and have the sdk installed through a non-brew method (e.g. directly from MS or via VSCode), I would recommend avoiding this installation method as the brew `dotnet` installation can conflict with your own installation due to differences in how `dotnet` is signed via brew. Alternatively, you can install the `dotnet` cask (which is signed correctly) `brew install --cash dotnet-sdk`, and then install `undercutf1`. This way, your system will still have a signed version of the SDK on its `$PATH`.
 
 The brew installation method will also install all the mentioned [prerequisites](#prerequisites) for you.
 
 #### Install and run the standalone executable
 
-Standalone executables are attached to each GitHub release. Download the executable for your system OS/architecture and simply run it directly. The list of artifacts are available on the [release page for the latest release](https://github.com/JustAman62/undercut-f1/releases/latest).
+Standalone executables are attached to each GitHub release. Download the executable for your system OS/architecture and simply run it directly. The list of artifacts are available on the [release page for the latest release](https://github.com/JustAman62/undercut-f1/releases/latest). These executables are static builds so don't require the `dotnet` runtime to be present.
 
 ```sh
 # Download the latest executable (in this case for osx-arm64)
