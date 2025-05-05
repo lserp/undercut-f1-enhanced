@@ -54,7 +54,7 @@ public class DriverTrackerDisplay : IDisplay
     private readonly ExtrapolatedClockProcessor _extrapolatedClock;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TerminalInfoProvider _terminalInfo;
-    private readonly IOptions<LiveTimingOptions> _options;
+    private readonly IOptions<Options> _options;
     private TransformFactors? _transform = null;
 
     private string[] _trackMapControlSequence = [];
@@ -70,7 +70,7 @@ public class DriverTrackerDisplay : IDisplay
         ExtrapolatedClockProcessor extrapolatedClock,
         IDateTimeProvider dateTimeProvider,
         TerminalInfoProvider terminalInfo,
-        IOptions<LiveTimingOptions> options
+        IOptions<Options> options
     )
     {
         _state = state;
@@ -101,13 +101,13 @@ public class DriverTrackerDisplay : IDisplay
         {
             // We don't think the current terminal supports the iTerm2 graphics protocol
             trackMapMessage = $"""
-                It seems the current terminal may not support inline graphics, which means we can't show the driver tracker.
-                If you think this is incorrect, please open an issue at https://github.com/JustAman62/undercut-f1. 
-                Include the diagnostic information below:
+                    It seems the current terminal may not support inline graphics, which means we can't show the driver tracker.
+                    If you think this is incorrect, please open an issue at https://github.com/JustAman62/undercut-f1. 
+                    Include the diagnostic information below:
 
-                LC_TERMINAL: {Environment.GetEnvironmentVariable("LC_TERMINAL")}
-                TERM: {Environment.GetEnvironmentVariable("TERM")}
-                TERM_PROGRAM: {Environment.GetEnvironmentVariable("TERM_PROGRAM")}
+                    LC_TERMINAL: {Environment.GetEnvironmentVariable("LC_TERMINAL")}
+                    TERM: {Environment.GetEnvironmentVariable("TERM")}
+                    TERM_PROGRAM: {Environment.GetEnvironmentVariable("TERM_PROGRAM")}
                 """;
         }
         var driverTower = GetDriverTower();

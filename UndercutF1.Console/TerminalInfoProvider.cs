@@ -1,12 +1,14 @@
 using System.Buffers;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using UndercutF1.Console.Graphics;
 
 namespace UndercutF1.Console;
 
 public sealed partial class TerminalInfoProvider
 {
+    private readonly IOptions<Options> _options;
     private readonly ILogger<TerminalInfoProvider> _logger;
 
     private static readonly string[] ITERM_PROTOCOL_SUPPORTED_TERMINALS = ["iterm", "wezterm"];
@@ -54,8 +56,9 @@ public sealed partial class TerminalInfoProvider
     /// </summary>
     public Lazy<(int Height, int Width, bool HiDpi)?> TerminalSize { get; private set; }
 
-    public TerminalInfoProvider(ILogger<TerminalInfoProvider> logger)
+    public TerminalInfoProvider(IOptions<Options> options, ILogger<TerminalInfoProvider> logger)
     {
+        _options = options;
         _logger = logger;
         IsITerm2ProtocolSupported = new Lazy<bool>(GetIsITerm2ProtocolSupported);
         IsKittyProtocolSupported = new Lazy<bool>(GetKittyProtocolSupported);
@@ -71,6 +74,12 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetIsITerm2ProtocolSupported()
     {
+        // Override support response if config is set
+        if (_options.Value.ForceGraphicsProtocol.HasValue)
+        {
+            return _options.Value.ForceGraphicsProtocol.Value == GraphicsProtocol.iTerm;
+        }
+
         var termProgram = Environment.GetEnvironmentVariable("TERM_PROGRAM") ?? string.Empty;
         var supported = ITERM_PROTOCOL_SUPPORTED_TERMINALS.Any(x =>
             termProgram.Contains(x, StringComparison.InvariantCultureIgnoreCase)
@@ -81,6 +90,12 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetKittyProtocolSupported()
     {
+        // Override support response if config is set
+        if (_options.Value.ForceGraphicsProtocol.HasValue)
+        {
+            return _options.Value.ForceGraphicsProtocol.Value == GraphicsProtocol.Kitty;
+        }
+
         PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
@@ -236,6 +251,12 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetSixelSupported()
     {
+        // Override support response if config is set
+        if (_options.Value.ForceGraphicsProtocol.HasValue)
+        {
+            return _options.Value.ForceGraphicsProtocol.Value == GraphicsProtocol.Sixel;
+        }
+
         PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try

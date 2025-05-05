@@ -3,10 +3,10 @@ using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public class SwitchToDebugInputHandler(State state, IOptions<LiveTimingOptions> liveTimingOptions)
+public class SwitchToDebugInputHandler(State state, IOptions<Options> Options)
     : IInputHandler
 {
-    public bool IsEnabled => liveTimingOptions.Value.Verbose;
+    public bool IsEnabled => Options.Value.Verbose;
 
     public Screen[] ApplicableScreens => [Screen.Main];
 

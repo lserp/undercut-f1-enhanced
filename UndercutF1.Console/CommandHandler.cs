@@ -2,6 +2,7 @@ using InMemLogger;
 using Serilog;
 using Serilog.Events;
 using TextCopy;
+using UndercutF1.Console.Graphics;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
@@ -15,6 +16,7 @@ public static partial class CommandHandler
         bool isVerbose = false,
         bool? notifyEnabled = null,
         bool? preferFfmpeg = null,
+        GraphicsProtocol? forceGraphicsProtocol = null,
         bool useConsoleLogging = false
     )
     {
@@ -23,38 +25,42 @@ public static partial class CommandHandler
         var commandLineOpts = new Dictionary<string, string?>();
         if (isVerbose)
         {
-            commandLineOpts.Add(nameof(LiveTimingOptions.Verbose), isVerbose.ToString());
+            commandLineOpts.Add(nameof(Options.Verbose), isVerbose.ToString());
         }
         if (isApiEnabled)
         {
-            commandLineOpts.Add(nameof(LiveTimingOptions.ApiEnabled), isApiEnabled.ToString());
+            commandLineOpts.Add(nameof(Options.ApiEnabled), isApiEnabled.ToString());
         }
         if (dataDirectory is not null)
         {
-            commandLineOpts.Add(nameof(LiveTimingOptions.DataDirectory), dataDirectory?.FullName);
+            commandLineOpts.Add(nameof(Options.DataDirectory), dataDirectory?.FullName);
         }
         if (logDirectory is not null)
         {
-            commandLineOpts.Add(nameof(LiveTimingOptions.LogDirectory), logDirectory?.FullName);
+            commandLineOpts.Add(nameof(Options.LogDirectory), logDirectory?.FullName);
         }
         if (notifyEnabled is not null)
         {
-            commandLineOpts.Add(nameof(LiveTimingOptions.Notify), notifyEnabled.ToString());
+            commandLineOpts.Add(nameof(Options.Notify), notifyEnabled.ToString());
         }
         if (preferFfmpeg is not null)
         {
+            commandLineOpts.Add(nameof(Options.PreferFfmpegPlayback), preferFfmpeg.ToString());
+        }
+        if (forceGraphicsProtocol is not null)
+        {
             commandLineOpts.Add(
-                nameof(LiveTimingOptions.PreferFfmpegPlayback),
-                preferFfmpeg.ToString()
+                nameof(Options.ForceGraphicsProtocol),
+                forceGraphicsProtocol.ToString()
             );
         }
 
-        builder
-            .Configuration.AddJsonFile(LiveTimingOptions.ConfigFilePath, optional: true)
+        _ = builder
+            .Configuration.AddJsonFile(Options.ConfigFilePath, optional: true)
             .AddEnvironmentVariables("UNDERCUTF1_")
             .AddInMemoryCollection(commandLineOpts);
 
-        var options = builder.Configuration.Get<LiveTimingOptions>() ?? new();
+        var options = builder.Configuration.Get<Options>() ?? new();
 
         var (inMemoryLogLevel, fileLogLevel) = options.Verbose
             ? (LogLevel.Trace, LogEventLevel.Verbose)
@@ -96,6 +102,7 @@ public static partial class CommandHandler
                         .AddSerilog();
                 }
             })
+            .Configure<Options>(builder.Configuration)
             .AddLiveTiming(builder.Configuration)
             .InjectClipboard();
 

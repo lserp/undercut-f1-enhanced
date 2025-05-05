@@ -30,6 +30,10 @@ var preferFfmpegOption = new Option<bool?>(
     "--prefer-ffmpeg",
     "Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123. `ffplay` is always used on Windows"
 );
+var forceGraphicsProtocol = new Option<GraphicsProtocol?>(
+    "--force-graphics-protocol",
+    "Forces the usage of a particular graphics protocol."
+);
 
 rootCommand.AddGlobalOption(isVerboseOption);
 rootCommand.AddGlobalOption(isApiEnabledOption);
@@ -37,6 +41,7 @@ rootCommand.AddGlobalOption(dataDirectoryOption);
 rootCommand.AddGlobalOption(logDirectoryOption);
 rootCommand.AddGlobalOption(notifyOption);
 rootCommand.AddGlobalOption(preferFfmpegOption);
+rootCommand.AddGlobalOption(forceGraphicsProtocol);
 
 rootCommand.SetHandler(
     CommandHandler.Root,
@@ -45,7 +50,8 @@ rootCommand.SetHandler(
     logDirectoryOption,
     isVerboseOption,
     notifyOption,
-    preferFfmpegOption
+    preferFfmpegOption,
+    forceGraphicsProtocol
 );
 
 var importCommand = new Command(
@@ -92,12 +98,13 @@ infoCommand.SetHandler(
     CommandHandler.GetInfo,
     dataDirectoryOption,
     logDirectoryOption,
-    isVerboseOption
+    isVerboseOption,
+    forceGraphicsProtocol
 );
 rootCommand.AddCommand(infoCommand);
 
 var graphicsProtocolArgument = new Argument<GraphicsProtocol>("The graphics protocol to use");
-var imageFilePathArgument = new Argument<FileInfo>("The path to the image file");
+var imageFilePathArgument = new Argument<FileInfo>("file");
 
 var imageCommand = new Command(
     "image",

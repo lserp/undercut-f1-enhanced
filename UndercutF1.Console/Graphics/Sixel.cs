@@ -7,25 +7,28 @@ public static class Sixel
 {
     private const char CarriageReturn = '$';
     private const char LineFeed = '-';
+    private const byte ColourSpace = 4;
 
     /// <summary>
-    /// Converts the given list of pixels (representing an image) in to a set of encoded sixels. 
+    /// Converts the given list of pixels (representing an image) in to a set of encoded sixels.
     /// Only the sixel data is returned, without the escape code header and trailer.
     /// </summary>
     public static string ImageToSixel(SKColor[] pixels, int width)
     {
-        var colourIdToColor = pixels
+        pixels = pixels.Select(ReducedColorSpace).ToArray();
+
+        var colourIdToColour = pixels
             .Distinct()
-            .Select((color, i) => (color, i))
-            .ToDictionary(x => x.color, x => x.i);
+            .Select((colour, i) => (colour, i))
+            .ToDictionary(x => x.colour, x => x.i);
 
         var sixels = pixels
             .Chunk(width) // Make a 2d array of pixels
             .Chunk(6) // Process chunks of 6 rows at a time, full width
-            .SelectMany(rowChunk => SixelChars(colourIdToColor, rowChunk))
+            .SelectMany(rowChunk => SixelChars(colourIdToColour, rowChunk))
             .ToArray();
 
-        var colourRegisters = GetColourRegister(colourIdToColor);
+        var colourRegisters = GetColourRegister(colourIdToColour);
         var sixelData = new string(sixels);
 
         return colourRegisters + sixelData;
@@ -85,9 +88,16 @@ public static class Sixel
             // colourType=2 is RGB
             // r/g/b is out of 100 instead of 255
             register.Append(
-                $"#{id};2;{colour.Red * 100 / 255};{colour.Green * 100 / 255};{colour.Blue * 100 / 255}"
+                $"#{id};2;{colour.Red * 100 / ColourSpace};{colour.Green * 100 / ColourSpace};{colour.Blue * 100 / ColourSpace}"
             );
         }
         return register.ToString();
     }
+
+    private static SKColor ReducedColorSpace(SKColor colour) =>
+        new(
+            (byte)(colour.Red * ColourSpace / 255),
+            (byte)(colour.Green * ColourSpace / 255),
+            (byte)(colour.Blue * ColourSpace / 255)
+        );
 }

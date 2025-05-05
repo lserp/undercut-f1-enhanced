@@ -3,7 +3,7 @@ using UndercutF1.Data;
 
 namespace UndercutF1.Console.Audio;
 
-public class AudioPlayer(IOptions<LiveTimingOptions> options, ILogger<AudioPlayer> logger)
+public class AudioPlayer(IOptions<Options> options, ILogger<AudioPlayer> logger)
 {
     private ChildProcess? _process = null;
 

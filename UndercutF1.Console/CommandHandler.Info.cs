@@ -9,13 +9,15 @@ public static partial class CommandHandler
     public static async Task GetInfo(
         DirectoryInfo? dataDirectory,
         DirectoryInfo? logDirectory,
-        bool isVerbose
+        bool isVerbose,
+        GraphicsProtocol? forceGraphicsProtocol
     )
     {
         var builder = GetBuilder(
             dataDirectory: dataDirectory,
             logDirectory: logDirectory,
-            isVerbose: isVerbose
+            isVerbose: isVerbose,
+            forceGraphicsProtocol: forceGraphicsProtocol
         );
 
         builder.Services.AddSingleton<State>().AddDisplays().AddSingleton<TerminalInfoProvider>();

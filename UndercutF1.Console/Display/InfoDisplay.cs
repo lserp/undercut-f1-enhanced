@@ -10,7 +10,7 @@ namespace UndercutF1.Console;
 
 public sealed class InfoDisplay(
     TerminalInfoProvider terminalInfo,
-    IOptions<LiveTimingOptions> options
+    IOptions<Options> options
 ) : IDisplay
 {
     public Screen Screen => Screen.Info;
@@ -23,9 +23,10 @@ public sealed class InfoDisplay(
             [bold]Log Directory:[/]         {options.Value.LogDirectory}
             [bold]Audible Notifications:[/] {options.Value.Notify}
             [bold]Verbose Mode:[/]          {options.Value.Verbose}
+            [bold]Forced Protocol:[/]       {options.Value.ForceGraphicsProtocol?.ToString() ?? "None"}
             [bold]Config Override File:[/]  {File.Exists(
-                LiveTimingOptions.ConfigFilePath
-            )} ({LiveTimingOptions.ConfigFilePath})
+                Options.ConfigFilePath
+            )} ({Options.ConfigFilePath})
             See https://github.com/JustAman62/undercut-f1#configuration for information on how to configure these options.
 
             [bold]Terminal Diagnostics[/]

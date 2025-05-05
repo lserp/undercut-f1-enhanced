@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SkiaSharp;
 using UndercutF1.Console.Graphics;
 
@@ -33,6 +34,8 @@ public static partial class CommandHandler
                     "Unable to determine height of terminal in pixels"
                 );
 
+            var stopwatch = Stopwatch.StartNew();
+
             var output = protocol switch
             {
                 GraphicsProtocol.Sixel => [SixelOutput(file.FullName)],
@@ -47,6 +50,8 @@ public static partial class CommandHandler
                 await Terminal.OutAsync(sequence);
             }
             await Terminal.OutAsync("\r\n");
+
+            await Terminal.OutAsync($"Time: {stopwatch.ElapsedMilliseconds}ms");
         }
         finally
         {

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -19,12 +20,13 @@ public class TimingHistoryDisplay(
     LapCountProcessor lapCount,
     SessionInfoProcessor sessionInfo,
     TerminalInfoProvider terminalInfo,
-    IOptions<LiveTimingOptions> options
+    IOptions<Options> options,
+    ILogger<TimingHistoryDisplay> logger
 ) : IDisplay
 {
     public Screen Screen => Screen.TimingHistory;
 
-    private const int LEFT_OFFSET = 68; // The normal width of the timing table
+    private const int LEFT_OFFSET = 69; // The normal width of the timing table
     private const int BOTTOM_OFFSET = 2;
     private const int LAPS_IN_CHART = 15;
 
@@ -180,6 +182,7 @@ public class TimingHistoryDisplay(
         if (
             !terminalInfo.IsITerm2ProtocolSupported.Value
             && !terminalInfo.IsKittyProtocolSupported.Value
+            && !terminalInfo.IsSixelSupported.Value
         )
         {
             return [];
@@ -192,10 +195,15 @@ public class TimingHistoryDisplay(
 
         var widthCells = Terminal.Size.Width - LEFT_OFFSET;
         var heightCells = Terminal.Size.Height - BOTTOM_OFFSET;
-        var ratio = widthCells * 1d / heightCells;
 
-        var heightPixels = 1000;
-        var widthPixels = (int)Math.Ceiling(heightPixels * ratio);
+        var terminalHeightPixels = terminalInfo.TerminalSize.Value?.Height ?? 1000;
+        var heightPerCell = terminalHeightPixels / Terminal.Size.Height;
+
+        var terminalWidthPixels = terminalInfo.TerminalSize.Value?.Width ?? 500;
+        var widthPerCell = terminalWidthPixels / Terminal.Size.Width;
+
+        var heightPixels = heightCells * heightPerCell;
+        var widthPixels = widthCells * widthPerCell;
 
         var surface = SKSurface.Create(new SKImageInfo(widthPixels, heightPixels));
         var canvas = surface.Canvas;
@@ -321,20 +329,21 @@ public class TimingHistoryDisplay(
             yMinStep: 1000
         );
         var lapChartImage = lapChart.GetImage();
-        canvas.DrawImage(lapChartImage, new SKPoint(0, 500));
+        canvas.DrawImage(lapChartImage, new SKPoint(0, heightPixels / 2));
 
         if (options.Value.Verbose)
         {
             // Add some debug information when verbose mode is on
             canvas.DrawRect(0, 0, widthPixels - 1, heightPixels - 1, _errorPaint);
-            canvas.DrawText($"Ratio: {ratio}", 5, 20, _errorPaint);
+            canvas.DrawText($"Width: {widthPixels}", 5, 20, _errorPaint);
+            canvas.DrawText($"Height: {heightPixels}", 5, 40, _errorPaint);
         }
 
-        var imageData = surface.Snapshot().Encode();
-        var base64 = Convert.ToBase64String(imageData.AsSpan());
 
         if (terminalInfo.IsKittyProtocolSupported.Value)
         {
+            var imageData = surface.Snapshot().Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return
             [
                 TerminalGraphics.KittyGraphicsSequenceDelete(),
@@ -343,7 +352,24 @@ public class TimingHistoryDisplay(
         }
         else if (terminalInfo.IsITerm2ProtocolSupported.Value)
         {
+            var imageData = surface.Snapshot().Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return [TerminalGraphics.ITerm2GraphicsSequence(heightCells, widthCells, base64)];
+        }
+        else if (terminalInfo.IsSixelSupported.Value)
+        {
+            var bitmap = SKBitmap.FromImage(surface.Snapshot());
+            var stopwatch = Stopwatch.StartNew();
+            var sixelData = Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width);
+            if (stopwatch.ElapsedMilliseconds > 100)
+            {
+                logger.LogWarning(
+                    "Creating sixel image took {Milliseconds}ms :: {Data}",
+                    stopwatch.ElapsedMilliseconds,
+                    sixelData
+                );
+            }
+            return [TerminalGraphics.SixelGraphicsSequence(sixelData)];
         }
 
         return ["Unexpected error, shouldn't have got here. Please report!"];
