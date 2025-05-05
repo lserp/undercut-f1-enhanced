@@ -1,6 +1,6 @@
 ﻿using System.CommandLine;
 using UndercutF1.Console;
-using UndercutF1.Data;
+using UndercutF1.Console.Graphics;
 
 var rootCommand = new RootCommand("undercutf1");
 
@@ -85,7 +85,7 @@ rootCommand.AddCommand(importCommand);
 var infoCommand = new Command(
     "info",
     """
-    Prints diagnostics about undercutf1, and the terminal in the command is run in.ƒ
+    Prints diagnostics about undercutf1, and the terminal in the command is run in.
     """
 );
 infoCommand.SetHandler(
@@ -95,5 +95,24 @@ infoCommand.SetHandler(
     isVerboseOption
 );
 rootCommand.AddCommand(infoCommand);
+
+var graphicsProtocolArgument = new Argument<GraphicsProtocol>("The graphics protocol to use");
+var imageFilePathArgument = new Argument<FileInfo>("The path to the image file");
+
+var imageCommand = new Command(
+    "image",
+    """
+    Displays the image from the provided filepath in the terminal, using the appropiate graphics protocol.
+    """
+);
+imageCommand.AddArgument(imageFilePathArgument);
+imageCommand.AddArgument(graphicsProtocolArgument);
+imageCommand.SetHandler(
+    CommandHandler.OutputImage,
+    imageFilePathArgument,
+    graphicsProtocolArgument,
+    isVerboseOption
+);
+rootCommand.AddCommand(imageCommand);
 
 await rootCommand.InvokeAsync(args);

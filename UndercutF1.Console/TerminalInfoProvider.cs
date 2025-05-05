@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Text;
 using System.Text.RegularExpressions;
+using UndercutF1.Console.Graphics;
 
 namespace UndercutF1.Console;
 
@@ -10,13 +11,13 @@ public sealed partial class TerminalInfoProvider
 
     private static readonly string[] ITERM_PROTOCOL_SUPPORTED_TERMINALS = ["iterm", "wezterm"];
 
-    [GeneratedRegex(@"\u001B_G(.+)\u001B\\")]
+    [GeneratedRegex(@"\e_G(.+)\e\\")]
     private static partial Regex TerminalKittyGraphicsResponseRegex();
 
-    [GeneratedRegex(@"\u001B\[\?2026;(\d+)\$y")]
+    [GeneratedRegex(@"\e\[\?2026;(\d+)\$y")]
     private static partial Regex TerminalSynchronizedOutputResponseRegex();
 
-    [GeneratedRegex(@"\u001B\[4;(\d+);(\d+)t")]
+    [GeneratedRegex(@"\e\[4;(\d+);(\d+)t")]
     private static partial Regex TerminalSizeResponseRegex();
 
     /// <summary>
@@ -34,6 +35,13 @@ public sealed partial class TerminalInfoProvider
     public Lazy<bool> IsKittyProtocolSupported { get; }
 
     /// <summary>
+    /// Returns <see langword="true"/> if the current terminal supports Sixel graphics.
+    /// This is done by checking the terminals response to a primary device attributes escape code.
+    /// </summary>
+    /// <returns><see langword="true" /> if the current terminal supports Sixel graphics.</returns>
+    public Lazy<bool> IsSixelSupported { get; }
+
+    /// <summary>
     /// Returns <see langword="true" /> if the current terminal support Synchronized Output,
     /// as described in https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
     /// and https://gitlab.com/gnachman/iterm2/-/wikis/synchronized-updates-spec.
@@ -42,19 +50,21 @@ public sealed partial class TerminalInfoProvider
 
     /// <summary>
     /// Returns the size of the terminal in pizels. <c>null</c> if terminal size could not be determined.
+    /// If the terminal is likely returning raw pizels instead of points, HiDpi will be set to true.
     /// </summary>
-    public Lazy<(int Height, int Width)?> TerminalSize { get; private set; }
+    public Lazy<(int Height, int Width, bool HiDpi)?> TerminalSize { get; private set; }
 
     public TerminalInfoProvider(ILogger<TerminalInfoProvider> logger)
     {
         _logger = logger;
         IsITerm2ProtocolSupported = new Lazy<bool>(GetIsITerm2ProtocolSupported);
         IsKittyProtocolSupported = new Lazy<bool>(GetKittyProtocolSupported);
+        IsSixelSupported = new Lazy<bool>(GetSixelSupported);
         IsSynchronizedOutputSupported = new Lazy<bool>(GetSynchronizedOutputSupported);
-        TerminalSize = new Lazy<(int, int)?>(GetTerminalSize);
+        TerminalSize = new Lazy<(int, int, bool)?>(GetTerminalSize);
         Terminal.Resized += (_new) =>
         {
-            TerminalSize = new Lazy<(int, int)?>(GetTerminalSize);
+            TerminalSize = new Lazy<(int, int, bool)?>(GetTerminalSize);
             _ = TerminalSize.Value;
         };
     }
@@ -76,9 +86,9 @@ public sealed partial class TerminalInfoProvider
         try
         {
             // Query the terminal with a graphic protocol specific escape code
-            Terminal.Out("\u001B_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\u001B\\");
+            Terminal.Out("\e_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\e\\");
             // Also send a device attributes escape code, so that there is always something to read from stdin
-            Terminal.Out("\u001B[c");
+            Terminal.Out("\e[c");
 
             // Expected response: <ESC>_Gi=31;error message or OK<ESC>\
             Terminal.Read(buffer);
@@ -98,7 +108,7 @@ public sealed partial class TerminalInfoProvider
                 Util.Sanitize(str)
             );
 
-            if (match.Success && !str.Contains("\u001B[?"))
+            if (match.Success && !str.Contains("\e[?"))
             {
                 DiscardExtraResponse();
             }
@@ -112,7 +122,6 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
-            CleanupTerminal();
         }
     }
 
@@ -122,9 +131,9 @@ public sealed partial class TerminalInfoProvider
         try
         {
             // Send a DECRQM query to the terminal to check for support
-            Terminal.Out("\u001B[?2026$p");
+            Terminal.Out("\e[?2026$p");
             // Also send a device attributes escape code, so that there is always something to read from stdin
-            Terminal.Out("\u001B[c");
+            Terminal.Out("\e[c");
 
             // Expected response: <ESC> [ ? 2026 ; 1 $ y
             Terminal.Read(buffer);
@@ -150,7 +159,7 @@ public sealed partial class TerminalInfoProvider
 
             // DECRQM response with \e[? as well, so ignore first 3 chars then check for \e[? again to see if we've
             // already read the device attribute query
-            if (match.Success && !str[3..].Contains("\u001B[?"))
+            if (match.Success && !str[3..].Contains("\e[?"))
             {
                 DiscardExtraResponse();
             }
@@ -168,16 +177,16 @@ public sealed partial class TerminalInfoProvider
         }
     }
 
-    private (int Height, int Width)? GetTerminalSize()
+    private (int Height, int Width, bool HiDpi)? GetTerminalSize()
     {
         PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
             // Send a DCS query to the terminal to query terminal size
-            Terminal.Out("\u001B[14t");
+            Terminal.Out("\e[14t");
             // Also send a device attributes escape code, so that there is always something to read from stdin
-            Terminal.Out("\u001B[c");
+            Terminal.Out("\e[c");
 
             // Expected response: <ESC> [ ; <height> ; <width> t
             Terminal.Read(buffer);
@@ -192,6 +201,14 @@ public sealed partial class TerminalInfoProvider
                 && int.TryParse(match.Groups[1].Captures[0].Value, out height)
                 && int.TryParse(match.Groups[2].Captures[0].Value, out width);
 
+            // Report on high DPI values because the terminal might give us the real height in pixels instead of scaled points.
+            // If we get a lower DPI, the tarminal is likely giving us the scaled pixel height (i.e. points) so use it directly.
+            // Here DPI really means pixels per character cell
+            // This is a rather hacky way of doing things, and only testing on iTerm vs WezTerm on macOS.
+            // Other setups might deal with this completely differently.
+            var screenDpi = height / Terminal.Size.Height;
+            var hiDpi = screenDpi > 35;
+
             _logger.LogDebug(
                 "Terminal Size (px): {Height}, {Width}: {Response}",
                 height,
@@ -199,12 +216,12 @@ public sealed partial class TerminalInfoProvider
                 Util.Sanitize(str)
             );
 
-            if (!str.Contains("\u001B[?"))
+            if (!str.Contains("\e[?"))
             {
                 DiscardExtraResponse();
             }
 
-            return height > 0 && width > 0 ? (height, width) : null;
+            return height > 0 && width > 0 ? (height, width, hiDpi) : null;
         }
         catch (Exception e)
         {
@@ -214,7 +231,38 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
-            CleanupTerminal();
+        }
+    }
+
+    private bool GetSixelSupported()
+    {
+        PrepareTerminal();
+        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        try
+        {
+            // Send a primary device attributes request
+            Terminal.Out("\e[c");
+
+            // Expected response: <ESC> [ ? [<attr> ; <attr> ; ... <attr>] c
+            // Attributes are a semicolon seperated list
+            Terminal.Read(buffer);
+
+            // Sixel support is indicated with attribute 4, see https://vt100.net/docs/vt510-rm/DA1.html
+            // Trim the beginning and end of the response to get just the attribute list
+            var response = Encoding.ASCII.GetString(buffer).TrimEnd((char)0)[2..^1];
+            var supportsSixel = response.Split(';').Contains("4");
+
+            _logger.LogDebug(
+                "Supports Sixel {Support}, Response: {Response}",
+                supportsSixel,
+                Util.Sanitize(response)
+            );
+
+            return supportsSixel;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
@@ -230,22 +278,15 @@ public sealed partial class TerminalInfoProvider
         }
     }
 
-    private void CleanupTerminal()
-    {
-        if (IsSynchronizedOutputSupported.Value)
-        {
-            Terminal.Out(TerminalGraphics.BeginSynchronizedUpdate());
-        }
-    }
-
     private void DiscardExtraResponse()
     {
         var buffer = ArrayPool<byte>.Shared.Rent(32);
         try
         {
+            _logger.LogDebug("Reading extra device attr response to discard");
             // Got a response to the check, so read and throw away the device attributes response as well
             _ = Terminal.Read(buffer);
-            _logger.LogDebug("Reading device attr response {Res}", Util.Sanitize(buffer));
+            _logger.LogDebug("Discarded extra response");
         }
         finally
         {

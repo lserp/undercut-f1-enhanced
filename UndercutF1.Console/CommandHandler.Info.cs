@@ -1,5 +1,6 @@
 using Spectre.Console;
 using Spectre.Console.Advanced;
+using UndercutF1.Console.Graphics;
 
 namespace UndercutF1.Console;
 
@@ -34,7 +35,6 @@ public static partial class CommandHandler
             }
 
             var output = AnsiConsole.Console.ToAnsi(content).Replace(Environment.NewLine, "\r\n");
-
             await Terminal.OutAsync(output);
         }
         finally

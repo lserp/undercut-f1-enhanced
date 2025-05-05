@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace UndercutF1.Console;
+namespace UndercutF1.Console.Graphics;
 
 /// <summary>
 /// Provide control sequences for displaying images in terminals.
@@ -12,10 +12,10 @@ namespace UndercutF1.Console;
 /// </summary>
 public static class TerminalGraphics
 {
-    private const string ESCAPE_CSI = "\u001B["; // Begins an Control Sequence Introducer
-    private const string ESCAPE_OSC = "\u001B]"; // Begins an Operating System Command
-    private const string ESCAPE_APC = "\u001B_G"; // Begins an Application Programming Command
-    private const string ESCAPE_ST = "\u001B\\"; // String Terminator
+    private const string ESCAPE_CSI = "\e["; // Begins an Control Sequence Introducer
+    private const string ESCAPE_OSC = "\e]"; // Begins an Operating System Command
+    private const string ESCAPE_APC = "\e_G"; // Begins an Application Programming Command
+    private const string ESCAPE_ST = "\e\\"; // String Terminator
 
     private static readonly string EncodedFileName = Convert.ToBase64String(
         Encoding.ASCII.GetBytes("drivertracker.png")

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Spectre.Console;
 using Spectre.Console.Advanced;
 using Spectre.Console.Rendering;
+using UndercutF1.Console.Graphics;
 
 namespace UndercutF1.Console;
 

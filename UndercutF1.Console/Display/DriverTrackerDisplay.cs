@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Console.Graphics;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
@@ -402,8 +403,9 @@ public class DriverTrackerDisplay : IDisplay
         // If we get a lower DPI, the tarminal is likely giving us the scaled pixel height (i.e. points) so use it directly.
         // Here DPI really means pixels per character cell
         var windowHeightPx = _terminalInfo.TerminalSize.Value?.Height ?? 1200;
-        var screenDpi = windowHeightPx / Terminal.Size.Height;
-        var targetHeight = screenDpi > 35 ? windowHeightPx / 2 : windowHeightPx;
+        var targetHeight = _terminalInfo.TerminalSize.Value.GetValueOrDefault().HiDpi
+            ? windowHeightPx / 2
+            : windowHeightPx;
         targetHeight -= TOP_OFFSET + BOTTOM_OFFSET;
 
         var imageScaleFactor = maxY / targetHeight;
