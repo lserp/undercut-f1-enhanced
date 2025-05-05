@@ -15,6 +15,7 @@ public static class TerminalGraphics
     private const string ESCAPE_CSI = "\e["; // Begins an Control Sequence Introducer
     private const string ESCAPE_OSC = "\e]"; // Begins an Operating System Command
     private const string ESCAPE_APC = "\e_G"; // Begins an Application Programming Command
+    private const string ESCAPE_DCS = "\eP"; // Begins an Device Control String
     private const string ESCAPE_ST = "\e\\"; // String Terminator
 
     private static readonly string EncodedFileName = Convert.ToBase64String(
@@ -110,4 +111,7 @@ public static class TerminalGraphics
     /// </summary>
     /// <returns>The control sequence as a string.</returns>
     public static string EndSynchronizedUpdate() => $"{ESCAPE_CSI}?2026l";
+
+    public static string SixelGraphicsSequence(string sixelData) =>
+        $"{ESCAPE_DCS}q{sixelData}{ESCAPE_ST}";
 }

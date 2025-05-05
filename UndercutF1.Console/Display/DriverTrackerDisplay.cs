@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Options;
 using SkiaSharp;
 using Spectre.Console;
@@ -248,6 +249,7 @@ public class DriverTrackerDisplay : IDisplay
             !(
                 _terminalInfo.IsITerm2ProtocolSupported.Value
                 || _terminalInfo.IsKittyProtocolSupported.Value
+                || _terminalInfo.IsSixelSupported.Value
             )
             || _sessionInfo.Latest.CircuitPoints.Count == 0
         )
@@ -367,11 +369,12 @@ public class DriverTrackerDisplay : IDisplay
             canvas.DrawText($"Transforms: {_transform}", 5, 120, _errorPaint);
         }
 
-        var imageData = surface.Snapshot().Encode();
-        var base64 = Convert.ToBase64String(imageData.AsSpan());
+        var image = surface.Snapshot();
 
         if (_terminalInfo.IsKittyProtocolSupported.Value)
         {
+            var imageData = image.Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return
             [
                 TerminalGraphics.KittyGraphicsSequenceDelete(),
@@ -380,7 +383,15 @@ public class DriverTrackerDisplay : IDisplay
         }
         else if (_terminalInfo.IsITerm2ProtocolSupported.Value)
         {
+            var imageData = image.Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return [TerminalGraphics.ITerm2GraphicsSequence(windowHeight, windowWidth, base64)];
+        }
+        else if (_terminalInfo.IsSixelSupported.Value)
+        {
+            var bitmap = SKBitmap.FromImage(image);
+            var sixelData = Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width);
+            return [TerminalGraphics.SixelGraphicsSequence(sixelData)];
         }
 
         return ["Unexpected error, shouldn't have got here. Please report!"];

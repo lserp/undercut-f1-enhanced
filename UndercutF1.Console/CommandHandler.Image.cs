@@ -58,7 +58,9 @@ public static partial class CommandHandler
     {
         var imageFromFile = SKImage.FromEncodedData(filepath);
         var bitmap = SKBitmap.FromImage(imageFromFile);
-        return Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width);
+        return TerminalGraphics.SixelGraphicsSequence(
+            Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width)
+        );
     }
 
     private static string iTermOutput(string filepath, int widthPixels, int heightPixels)

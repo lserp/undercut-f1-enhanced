@@ -5,11 +5,13 @@ namespace UndercutF1.Console.Graphics;
 
 public static class Sixel
 {
-    private const string DCS = "\eP";
-    private const string ST = "\e\\";
     private const char CarriageReturn = '$';
     private const char LineFeed = '-';
 
+    /// <summary>
+    /// Converts the given list of pixels (representing an image) in to a set of encoded sixels. 
+    /// Only the sixel data is returned, without the escape code header and trailer.
+    /// </summary>
     public static string ImageToSixel(SKColor[] pixels, int width)
     {
         var colourIdToColor = pixels
@@ -23,11 +25,10 @@ public static class Sixel
             .SelectMany(rowChunk => SixelChars(colourIdToColor, rowChunk))
             .ToArray();
 
-        var header = $"{DCS}q";
         var colourRegisters = GetColourRegister(colourIdToColor);
         var sixelData = new string(sixels);
 
-        return header + colourRegisters + sixelData + ST;
+        return colourRegisters + sixelData;
     }
 
     private static string SixelChars(Dictionary<SKColor, int> colourMap, SKColor[][] rows)
