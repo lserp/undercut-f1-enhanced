@@ -1,17 +1,12 @@
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Spectre.Console;
 using Spectre.Console.Rendering;
-using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public sealed class InfoDisplay(
-    TerminalInfoProvider terminalInfo,
-    IOptions<Options> options
-) : IDisplay
+public sealed class InfoDisplay(TerminalInfoProvider terminalInfo, IOptions<Options> options)
+    : IDisplay
 {
     public Screen Screen => Screen.Info;
 
@@ -31,7 +26,7 @@ public sealed class InfoDisplay(
 
             [bold]Terminal Diagnostics[/]
             [bold]TERM_PROGRAM:[/]        {Environment.GetEnvironmentVariable("TERM_PROGRAM")}
-            [bold]Window Size W/H:[/]     {terminalInfo.TerminalSize.Value?.Width}/{terminalInfo.TerminalSize.Value?.Height} ({(terminalInfo.TerminalSize.Value?.Height ?? 0) / Terminal.Size.Height})
+            [bold]Window Size W/H:[/]     {terminalInfo.TerminalSize.Value.Width}/{terminalInfo.TerminalSize.Value.Height} ({terminalInfo.TerminalSize.Value.Height / Terminal.Size.Height})
             [bold]Kitty Graphics:[/]      {terminalInfo.IsKittyProtocolSupported.Value}
             [bold]iTerm2 Graphics:[/]     {terminalInfo.IsITerm2ProtocolSupported.Value}
             [bold]Sixel Graphics:[/]      {terminalInfo.IsSixelSupported.Value}

@@ -23,16 +23,8 @@ public static partial class CommandHandler
             var columns = Terminal.Size.Width;
             var rows = Terminal.Size.Height;
 
-            var width =
-                terminalInfo.TerminalSize.Value?.Width
-                ?? throw new InvalidOperationException(
-                    "Unable to determine width of terminal in pixels"
-                );
-            var height =
-                terminalInfo.TerminalSize.Value?.Height
-                ?? throw new InvalidOperationException(
-                    "Unable to determine height of terminal in pixels"
-                );
+            var width = terminalInfo.TerminalSize.Value.Width;
+            var height = terminalInfo.TerminalSize.Value.Height;
 
             var stopwatch = Stopwatch.StartNew();
 

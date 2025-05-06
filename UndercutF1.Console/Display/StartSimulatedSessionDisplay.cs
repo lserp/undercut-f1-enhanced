@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Spectre.Console;
 using Spectre.Console.Rendering;
-using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 

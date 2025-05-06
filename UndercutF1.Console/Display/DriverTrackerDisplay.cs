@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Options;
 using SkiaSharp;
 using Spectre.Console;
@@ -97,17 +96,18 @@ public class DriverTrackerDisplay : IDisplay
         if (
             !_terminalInfo.IsITerm2ProtocolSupported.Value
             && !_terminalInfo.IsKittyProtocolSupported.Value
+            && !_terminalInfo.IsSixelSupported.Value
         )
         {
             // We don't think the current terminal supports the iTerm2 graphics protocol
             trackMapMessage = $"""
-                    It seems the current terminal may not support inline graphics, which means we can't show the driver tracker.
-                    If you think this is incorrect, please open an issue at https://github.com/JustAman62/undercut-f1. 
-                    Include the diagnostic information below:
+                It seems the current terminal may not support inline graphics, which means we can't show the driver tracker.
+                If you think this is incorrect, please open an issue at https://github.com/JustAman62/undercut-f1. 
+                Include the diagnostic information below:
 
-                    LC_TERMINAL: {Environment.GetEnvironmentVariable("LC_TERMINAL")}
-                    TERM: {Environment.GetEnvironmentVariable("TERM")}
-                    TERM_PROGRAM: {Environment.GetEnvironmentVariable("TERM_PROGRAM")}
+                LC_TERMINAL: {Environment.GetEnvironmentVariable("LC_TERMINAL")}
+                TERM: {Environment.GetEnvironmentVariable("TERM")}
+                TERM_PROGRAM: {Environment.GetEnvironmentVariable("TERM_PROGRAM")}
                 """;
         }
         var driverTower = GetDriverTower();
@@ -328,6 +328,8 @@ public class DriverTrackerDisplay : IDisplay
         // Terminal cells are ~twice as high as they are wide, so take that in to consideration
         var availableAspectRatio = windowWidth / (windowHeight * 2.2);
 
+        var cellAspectRatio = 1 / _terminalInfo.TerminalSize.Value.CellAspectRatio;
+
         if (targetAspectRatio > availableAspectRatio)
         {
             windowHeight = (int)Math.Ceiling(windowWidth / targetAspectRatio / 2.2);
@@ -400,6 +402,7 @@ public class DriverTrackerDisplay : IDisplay
     private TransformFactors GetTransformFactors()
     {
         var circuitPoints = _sessionInfo.Latest.CircuitPoints;
+        var terminalSize = _terminalInfo.TerminalSize.Value;
 
         // Shift all points in to positive coordinates
         var minX = circuitPoints.Min(x => x.x);
@@ -410,16 +413,21 @@ public class DriverTrackerDisplay : IDisplay
         var maxX = circuitPoints.Max(x => x.x);
         var maxY = circuitPoints.Max(x => x.y);
 
-        // For high DPI values, target half the screen height for the image. This is because the terminal is likely giving us the real height in pixels.
-        // If we get a lower DPI, the tarminal is likely giving us the scaled pixel height (i.e. points) so use it directly.
-        // Here DPI really means pixels per character cell
-        var windowHeightPx = _terminalInfo.TerminalSize.Value?.Height ?? 1200;
-        var targetHeight = _terminalInfo.TerminalSize.Value.GetValueOrDefault().HiDpi
-            ? windowHeightPx / 2
-            : windowHeightPx;
-        targetHeight -= TOP_OFFSET + BOTTOM_OFFSET;
+        var targetAspectRatio = maxX / (double)maxY;
 
-        var imageScaleFactor = maxY / targetHeight;
+        var availableRows = terminalSize.Rows - TOP_OFFSET - BOTTOM_OFFSET;
+        var availableColumns = terminalSize.Columns - LEFT_OFFSET - 2;
+        var availableAspectRatio =
+            terminalSize.ColumnsToPixels(availableColumns)
+            / (double)terminalSize.RowsToPixels(availableRows);
+
+        var imageScaleFactor =
+            availableAspectRatio > targetAspectRatio
+                ? maxY / (terminalSize.RowsToPixels(availableRows) - (IMAGE_PADDING * 3))
+                : maxX / (terminalSize.ColumnsToPixels(availableColumns) - (IMAGE_PADDING * 3));
+
+        // Add one to ensure we always have a smaller image than we need
+        imageScaleFactor += 1;
 
         return new(
             ScaleFactor: imageScaleFactor,

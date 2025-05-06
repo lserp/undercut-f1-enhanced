@@ -196,10 +196,10 @@ public class TimingHistoryDisplay(
         var widthCells = Terminal.Size.Width - LEFT_OFFSET;
         var heightCells = Terminal.Size.Height - BOTTOM_OFFSET;
 
-        var terminalHeightPixels = terminalInfo.TerminalSize.Value?.Height ?? 1000;
+        var terminalHeightPixels = terminalInfo.TerminalSize.Value.Height;
         var heightPerCell = terminalHeightPixels / Terminal.Size.Height;
 
-        var terminalWidthPixels = terminalInfo.TerminalSize.Value?.Width ?? 500;
+        var terminalWidthPixels = terminalInfo.TerminalSize.Value.Width;
         var widthPerCell = terminalWidthPixels / Terminal.Size.Width;
 
         var heightPixels = heightCells * heightPerCell;
@@ -338,7 +338,6 @@ public class TimingHistoryDisplay(
             canvas.DrawText($"Width: {widthPixels}", 5, 20, _errorPaint);
             canvas.DrawText($"Height: {heightPixels}", 5, 40, _errorPaint);
         }
-
 
         if (terminalInfo.IsKittyProtocolSupported.Value)
         {

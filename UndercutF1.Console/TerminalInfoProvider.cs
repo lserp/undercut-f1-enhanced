@@ -54,7 +54,7 @@ public sealed partial class TerminalInfoProvider
     /// Returns the size of the terminal in pizels. <c>null</c> if terminal size could not be determined.
     /// If the terminal is likely returning raw pizels instead of points, HiDpi will be set to true.
     /// </summary>
-    public Lazy<(int Height, int Width, bool HiDpi)?> TerminalSize { get; private set; }
+    public Lazy<TerminalSizeInfo> TerminalSize { get; private set; }
 
     public TerminalInfoProvider(IOptions<Options> options, ILogger<TerminalInfoProvider> logger)
     {
@@ -64,10 +64,10 @@ public sealed partial class TerminalInfoProvider
         IsKittyProtocolSupported = new Lazy<bool>(GetKittyProtocolSupported);
         IsSixelSupported = new Lazy<bool>(GetSixelSupported);
         IsSynchronizedOutputSupported = new Lazy<bool>(GetSynchronizedOutputSupported);
-        TerminalSize = new Lazy<(int, int, bool)?>(GetTerminalSize);
+        TerminalSize = new Lazy<TerminalSizeInfo>(GetTerminalSize);
         Terminal.Resized += (_new) =>
         {
-            TerminalSize = new Lazy<(int, int, bool)?>(GetTerminalSize);
+            TerminalSize = new Lazy<TerminalSizeInfo>(GetTerminalSize);
             _ = TerminalSize.Value;
         };
     }
@@ -192,7 +192,7 @@ public sealed partial class TerminalInfoProvider
         }
     }
 
-    private (int Height, int Width, bool HiDpi)? GetTerminalSize()
+    private TerminalSizeInfo GetTerminalSize()
     {
         PrepareTerminal();
         var buffer = ArrayPool<byte>.Shared.Rent(32);
@@ -216,18 +216,35 @@ public sealed partial class TerminalInfoProvider
                 && int.TryParse(match.Groups[1].Captures[0].Value, out height)
                 && int.TryParse(match.Groups[2].Captures[0].Value, out width);
 
-            // Report on high DPI values because the terminal might give us the real height in pixels instead of scaled points.
-            // If we get a lower DPI, the tarminal is likely giving us the scaled pixel height (i.e. points) so use it directly.
-            // Here DPI really means pixels per character cell
-            // This is a rather hacky way of doing things, and only testing on iTerm vs WezTerm on macOS.
-            // Other setups might deal with this completely differently.
-            var screenDpi = height / Terminal.Size.Height;
-            var hiDpi = screenDpi > 35;
-
-            _logger.LogDebug(
-                "Terminal Size (px): {Height}, {Width}: {Response}",
+            var terminalSizeInfo = new TerminalSizeInfo(
                 height,
                 width,
+                Terminal.Size.Height,
+                Terminal.Size.Width,
+                height / Terminal.Size.Height,
+                width / Terminal.Size.Width
+            );
+
+            // Fudge for when iTerm terminals are using Sixel. iTerm reports it's resolution in scaled points instead of raw pixels,
+            // but when it draws Sixels it draws raw pixels. So we double the reported terminal size to try and account for that
+            // It's quite hacky
+            if (
+                _options.Value.ForceGraphicsProtocol == GraphicsProtocol.Sixel
+                && Environment.GetEnvironmentVariable("TERM_PROGRAM") == "iTerm.app"
+            )
+            {
+                terminalSizeInfo = terminalSizeInfo with
+                {
+                    Height = terminalSizeInfo.Height * 2,
+                    Width = terminalSizeInfo.Width * 2,
+                    PixelsPerRow = terminalSizeInfo.PixelsPerRow * 2,
+                    PixelsPerColumn = terminalSizeInfo.PixelsPerColumn * 2,
+                };
+            }
+
+            _logger.LogDebug(
+                "Terminal Size: {TerminalSizeInfo}: {Response}",
+                terminalSizeInfo,
                 Util.Sanitize(str)
             );
 
@@ -236,12 +253,12 @@ public sealed partial class TerminalInfoProvider
                 DiscardExtraResponse();
             }
 
-            return height > 0 && width > 0 ? (height, width, hiDpi) : null;
+            return terminalSizeInfo;
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to fetch terminal size in pixels");
-            return null;
+            return new(1, 1, 1, 1, 1, 1);
         }
         finally
         {
@@ -314,4 +331,20 @@ public sealed partial class TerminalInfoProvider
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
+
+    public record struct TerminalSizeInfo(
+        int Height,
+        int Width,
+        int Rows,
+        int Columns,
+        int PixelsPerRow,
+        int PixelsPerColumn
+    )
+    {
+        public readonly double CellAspectRatio => PixelsPerColumn / (double)PixelsPerRow;
+
+        public int RowsToPixels(int rows) => rows * PixelsPerRow;
+
+        public int ColumnsToPixels(int columns) => columns * PixelsPerColumn;
+    };
 }
