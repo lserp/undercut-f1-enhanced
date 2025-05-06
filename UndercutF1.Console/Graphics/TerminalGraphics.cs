@@ -113,5 +113,5 @@ public static class TerminalGraphics
     public static string EndSynchronizedUpdate() => $"{ESCAPE_CSI}?2026l";
 
     public static string SixelGraphicsSequence(string sixelData) =>
-        $"{ESCAPE_DCS}q{sixelData}{ESCAPE_ST}";
+        $"{ESCAPE_DCS}9;1q{sixelData}{ESCAPE_ST}";
 }
