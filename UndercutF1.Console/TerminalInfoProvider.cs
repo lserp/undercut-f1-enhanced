@@ -179,7 +179,7 @@ public sealed partial class TerminalInfoProvider
                 DiscardExtraResponse();
             }
 
-            return match.Success;
+            return supported;
         }
         catch (Exception e)
         {
