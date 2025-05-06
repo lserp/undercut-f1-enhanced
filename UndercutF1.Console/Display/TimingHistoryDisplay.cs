@@ -358,16 +358,7 @@ public class TimingHistoryDisplay(
         else if (terminalInfo.IsSixelSupported.Value)
         {
             var bitmap = SKBitmap.FromImage(surface.Snapshot());
-            var stopwatch = Stopwatch.StartNew();
             var sixelData = Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width);
-            if (stopwatch.ElapsedMilliseconds > 100)
-            {
-                logger.LogWarning(
-                    "Creating sixel image took {Milliseconds}ms :: {Data}",
-                    stopwatch.ElapsedMilliseconds,
-                    sixelData
-                );
-            }
             return [TerminalGraphics.SixelGraphicsSequence(sixelData)];
         }
 

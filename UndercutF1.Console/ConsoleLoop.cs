@@ -24,6 +24,7 @@ public class ConsoleLoop(
 
     private string _previousDraw = string.Empty;
     private bool _stopped = false;
+    private int _slowFrameReports = 0;
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -72,7 +73,7 @@ public class ConsoleLoop(
 
                 UpdateInputFooter(layout);
 
-                // Unix rawmode + Windows terminals need CRLFs, but Environment.NewLine differs and is used
+                // Unix rawmode + Windows terminals need CRLFs, but Environment.NewLine differs and is used by Spectre
                 var output = AnsiConsole
                     .Console.ToAnsi(layout)
                     .Replace(Environment.NewLine, "\r\n");
@@ -103,6 +104,17 @@ public class ConsoleLoop(
             }
 
             stopwatch.Stop();
+
+            if (_slowFrameReports < 10 && stopwatch.ElapsedMilliseconds > 100)
+            {
+                logger.LogWarning(
+                    "Frame time for screen {Screen} exceeded 100ms: {Milliseconds}ms",
+                    state.CurrentScreen,
+                    stopwatch.ElapsedMilliseconds
+                );
+                _slowFrameReports++;
+            }
+
             var timeToDelay = TargetFrameTimeMs - stopwatch.ElapsedMilliseconds;
             if (timeToDelay > 0)
             {
