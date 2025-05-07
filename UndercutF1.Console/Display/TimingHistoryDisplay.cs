@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
@@ -20,8 +19,7 @@ public class TimingHistoryDisplay(
     LapCountProcessor lapCount,
     SessionInfoProcessor sessionInfo,
     TerminalInfoProvider terminalInfo,
-    IOptions<Options> options,
-    ILogger<TimingHistoryDisplay> logger
+    IOptions<Options> options
 ) : IDisplay
 {
     public Screen Screen => Screen.TimingHistory;
@@ -44,6 +42,7 @@ public class TimingHistoryDisplay(
         Color = SKColor.Parse("FF0000"),
         IsStroke = true,
         Typeface = _boldTypeface,
+        IsAntialias = false,
     };
     private static readonly SKTypeface _boldTypeface = SKTypeface.FromFamilyName(
         "Consolas",
@@ -51,6 +50,14 @@ public class TimingHistoryDisplay(
         width: SKFontStyleWidth.Normal,
         slant: SKFontStyleSlant.Upright
     );
+
+    private static readonly SolidColorPaint _lightGrayPaint = new(SKColors.LightGray);
+    private static readonly SolidColorPaint _labelsPaint = new(SKColors.LightGray);
+
+    private static readonly SolidColorPaint _whitePaint = new(SKColors.White)
+    {
+        IsAntialias = false,
+    };
 
     private string[] _chartPanelControlSequence = [];
 
@@ -290,11 +297,12 @@ public class TimingHistoryDisplay(
                 return new LineSeries<double?>(x.Value)
                 {
                     Name = x.Key,
-                    Fill = new SolidColorPaint(SKColors.Transparent),
+                    Fill = new SolidColorPaint(SKColors.Transparent) { IsAntialias = false },
                     GeometryStroke = null,
                     GeometryFill = null,
                     Stroke = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
                     {
+                        IsAntialias = false,
                         StrokeThickness = 2,
                     },
                     IsVisible = state.SelectedDrivers.Contains(x.Key),
@@ -303,7 +311,10 @@ public class TimingHistoryDisplay(
                         p.Index == x.Value.Count - 1 ? driver.Tla! : string.Empty,
                     DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Right,
                     DataLabelsSize = 16,
-                    DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour)),
+                    DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
+                    {
+                        IsAntialias = false,
+                    },
                     DataPadding = new LiveChartsCore.Drawing.LvcPoint(1, 0),
                 };
             })
@@ -386,7 +397,7 @@ public class TimingHistoryDisplay(
             Title = new LabelVisual
             {
                 Text = title,
-                Paint = new SolidColorPaint(SKColors.White),
+                Paint = _whitePaint,
                 TextSize = 20,
             },
             XAxes =
@@ -394,7 +405,7 @@ public class TimingHistoryDisplay(
                 new Axis
                 {
                     MinStep = 1,
-                    LabelsPaint = new SolidColorPaint(SKColors.LightGray),
+                    LabelsPaint = _labelsPaint,
                     Labeler = v =>
                         axisStartLap > 0 ? (v + axisStartLap + 1).ToString() : (v + 1).ToString(),
                 },
@@ -403,8 +414,8 @@ public class TimingHistoryDisplay(
             [
                 new Axis
                 {
-                    SeparatorsPaint = new SolidColorPaint(SKColors.LightGray),
-                    LabelsPaint = new SolidColorPaint(SKColors.LightGray),
+                    SeparatorsPaint = _lightGrayPaint,
+                    LabelsPaint = _labelsPaint,
                     MinLimit = axisMin,
                     MaxLimit = axisMax,
                     Labeler = labeler,

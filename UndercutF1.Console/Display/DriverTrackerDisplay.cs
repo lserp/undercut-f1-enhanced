@@ -18,6 +18,7 @@ public class DriverTrackerDisplay : IDisplay
     {
         Color = SKColor.Parse("666666"),
         StrokeWidth = 6,
+        IsAntialias = false,
     };
     private static readonly SKPaint _cornerTextPaint = new()
     {
@@ -29,12 +30,19 @@ public class DriverTrackerDisplay : IDisplay
             width: SKFontStyleWidth.Normal,
             slant: SKFontStyleSlant.Upright
         ),
+        IsAntialias = false,
+    };
+    private static readonly SKPaint _selectedPaint = new()
+    {
+        Color = SKColor.Parse("FFFFFF"),
+        IsAntialias = false,
     };
     private static readonly SKPaint _errorPaint = new()
     {
         Color = SKColor.Parse("FF0000"),
         IsStroke = true,
         Typeface = _boldTypeface,
+        IsAntialias = false,
     };
     private static readonly SKTypeface _boldTypeface = SKTypeface.FromFamilyName(
         "Consolas",
@@ -305,12 +313,13 @@ public class DriverTrackerDisplay : IDisplay
                         Color = SKColor.Parse(data.TeamColour),
                         TextSize = 24,
                         Typeface = _boldTypeface,
+                        IsAntialias = false,
                     };
 
                     // Draw a white box around the driver currently selected by the cursor
                     if (_timingData.Latest.Lines[driverNumber].Line == _state.CursorOffset)
                     {
-                        var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
+                        var rectPaint = _selectedPaint;
                         canvas.DrawRoundRect(x - 8, y - 12, 65, 24, 4, 4, rectPaint);
                     }
 

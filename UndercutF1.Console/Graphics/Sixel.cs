@@ -100,6 +100,6 @@ public static class Sixel
             (byte)(colour.Red * ColourSpace / 255),
             (byte)(colour.Green * ColourSpace / 255),
             (byte)(colour.Blue * ColourSpace / 255),
-            colour.Alpha
+            (byte)(colour.Alpha > 50 ? 1 : 0)
         );
 }
