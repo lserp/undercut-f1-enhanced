@@ -112,6 +112,12 @@ public static class TerminalGraphics
     /// <returns>The control sequence as a string.</returns>
     public static string EndSynchronizedUpdate() => $"{ESCAPE_CSI}?2026l";
 
+    /// <summary>
+    /// Returns the control sequences for displaying the provided <paramref name="sixelData"/> as a Sixel image
+    /// in the terminal.
+    /// </summary>
+    /// <param name="sixelData">The already encoded Sixel data</param>
+    /// <returns>The control sequence as a string</returns>
     public static string SixelGraphicsSequence(string sixelData) =>
         $"{ESCAPE_DCS}9;1q{sixelData}{ESCAPE_ST}";
 }

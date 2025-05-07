@@ -26,7 +26,7 @@ public static class Sixel
         var sixels = pixels
             .Chunk(width) // Make a 2d array of pixels
             .Chunk(6) // Process chunks of 6 rows at a time, full width
-            .SelectMany(rowChunk => SixelChars(colourIdToColour, rowChunk))
+            .SelectMany(rowChunk => SixelChars(colourIdToColour, rowChunk, width))
             .ToArray();
 
         var colourRegisters = GetColourRegister(colourIdToColour);
@@ -35,7 +35,11 @@ public static class Sixel
         return colourRegisters + sixelData;
     }
 
-    private static string SixelChars(Dictionary<SKColor, int> colourMap, SKColor[][] rows)
+    private static string SixelChars(
+        Dictionary<SKColor, int> colourMap,
+        SKColor[][] rows,
+        int width
+    )
     {
         // rows will be a 6 * width array of colours
         // process each row and create sixel characters
@@ -43,8 +47,8 @@ public static class Sixel
         var sixels = new StringBuilder();
         foreach (var (colour, colourId) in colourMap)
         {
-            var rowOfSixelsForColour = SixelCharsForColour(colour, colourId, rows);
-            if (rowOfSixelsForColour.Any(x => x > 63))
+            var rowOfSixelsForColour = SixelCharsForColour(colour, colourId, rows, width);
+            if (rowOfSixelsForColour is not null)
             {
                 // Only append the sixels if they actually draw any colour
                 sixels.Append(rowOfSixelsForColour);
@@ -57,28 +61,57 @@ public static class Sixel
         return sixels.ToString();
     }
 
-    private static string SixelCharsForColour(SKColor colour, int colourId, SKColor[][] rows)
+    private static string? SixelCharsForColour(
+        SKColor colour,
+        int colourId,
+        SKColor[][] rows,
+        int width
+    )
     {
-        // TODO: Instead of outputting a sixel for every column,
-        // we should use the !repeat feature to output adjacent identical columns efficently
-        var sixels = new char[rows[0].Length];
-        for (var row = 0; row < rows.Length; row++)
+        var sixels = new StringBuilder();
+
+        var prevSixel = (char)0;
+        var count = 0;
+        for (var column = 0; column < width; column++)
         {
-            for (var column = 0; column < rows[row].Length; column++)
+            var newSixel = (char)0;
+            for (var row = 0; row < rows.Length; row++)
             {
                 if (rows[row][column] == colour)
                 {
                     // Use the row number to set the correct bit of the sixel for the current column
-                    sixels[column] |= (char)(1 << row);
+                    newSixel |= (char)(1 << row);
                 }
             }
+
+            if (prevSixel != newSixel)
+            {
+                // Not a repeat sixel, so write the previous sixel
+                sixels.AppendSixel(prevSixel, count);
+                prevSixel = newSixel;
+                count = 1;
+            }
+            else
+            {
+                count++;
+            }
         }
+        sixels.AppendSixel(prevSixel, count);
 
         // Output a line for the current colour, ending with a carriage return so the cursor is ready to draw the next colour
-        return $"#{colourId}"
-            + new string(sixels.Select(c => (char)(c + 63)).ToArray())
-            + CarriageReturn;
+        // Return null if the entire line is just 0's
+        return count != width ? $"#{colourId}{sixels}{CarriageReturn}" : null;
     }
+
+    private static void AppendSixel(this StringBuilder sixels, char sixel, int count) =>
+        sixels.Append(
+            count switch
+            {
+                0 => string.Empty,
+                1 => (char)(sixel + 63),
+                _ => $"!{count}{(char)(sixel + 63)}",
+            }
+        );
 
     private static string GetColourRegister(Dictionary<SKColor, int> colours)
     {
