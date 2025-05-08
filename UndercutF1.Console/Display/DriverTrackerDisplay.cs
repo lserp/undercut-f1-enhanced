@@ -267,7 +267,9 @@ public class DriverTrackerDisplay : IDisplay
 
         _transform ??= GetTransformFactors();
 
-        var surface = SKSurface.Create(new SKImageInfo(_transform.MaxX, _transform.MaxY));
+        var surface = SKSurface.Create(
+            new SKImageInfo(_transform.MaxX, _transform.MaxY, SKColorType.Rgb565)
+        );
         var canvas = surface.Canvas;
 
         var circuitPoints = _sessionInfo.Latest.CircuitPoints.Select(x =>

@@ -212,7 +212,9 @@ public class TimingHistoryDisplay(
         var heightPixels = heightCells * heightPerCell;
         var widthPixels = widthCells * widthPerCell;
 
-        var surface = SKSurface.Create(new SKImageInfo(widthPixels, heightPixels));
+        var surface = SKSurface.Create(
+            new SKImageInfo(widthPixels, heightPixels, SKColorType.Rgb565)
+        );
         var canvas = surface.Canvas;
 
         var gapSeriesData = driverList

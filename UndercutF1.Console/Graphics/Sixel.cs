@@ -15,28 +15,26 @@ public static class Sixel
     /// </summary>
     public static string ImageToSixel(SKColor[] pixels, int width)
     {
-        pixels = pixels.Select(ReducedColorSpace).ToArray();
+        var reducedColourSpacePixels = pixels.Select(ReducedColorSpace);
 
-        var colourIdToColour = pixels
+        var colourToColourId = reducedColourSpacePixels
             .Distinct()
-            .Where(x => x.Alpha > 0)
             .Select((colour, i) => (colour, i))
             .ToDictionary(x => x.colour, x => x.i);
 
-        var sixels = pixels
+        var sixels = reducedColourSpacePixels
             .Chunk(width) // Make a 2d array of pixels
             .Chunk(6) // Process chunks of 6 rows at a time, full width
-            .SelectMany(rowChunk => SixelChars(colourIdToColour, rowChunk, width))
-            .ToArray();
+            .Select(rowChunk => SixelChars(colourToColourId, rowChunk, width));
 
-        var colourRegisters = GetColourRegister(colourIdToColour);
-        var sixelData = new string(sixels);
+        var colourRegisters = GetColourRegister(colourToColourId);
+        var sixelData = string.Concat(sixels);
 
         return colourRegisters + sixelData;
     }
 
     private static string SixelChars(
-        Dictionary<SKColor, int> colourMap,
+        Dictionary<SKColor, int> colourToColourId,
         SKColor[][] rows,
         int width
     )
@@ -45,7 +43,7 @@ public static class Sixel
         // process each row and create sixel characters
         // each row needs to be processed for each colour
         var sixels = new StringBuilder();
-        foreach (var (colour, colourId) in colourMap)
+        foreach (var (colour, colourId) in colourToColourId)
         {
             var rowOfSixelsForColour = SixelCharsForColour(colour, colourId, rows, width);
             if (rowOfSixelsForColour is not null)
@@ -100,6 +98,7 @@ public static class Sixel
 
         // Output a line for the current colour, ending with a carriage return so the cursor is ready to draw the next colour
         // Return null if the entire line is just 0's
+        // If we've looped through all the pixels and not found anything, then count will equal width
         return count != width ? $"#{colourId}{sixels}{CarriageReturn}" : null;
     }
 
@@ -116,23 +115,17 @@ public static class Sixel
     private static string GetColourRegister(Dictionary<SKColor, int> colours)
     {
         var register = new StringBuilder();
-        foreach (var (colour, id) in colours)
-        {
-            // colour register is #id;colourType;red;green;blue
-            // colourType=2 is RGB
-            // r/g/b is out of 100 instead of 255
-            register.Append(
-                $"#{id};2;{colour.Red * 100 / ColourSpace};{colour.Green * 100 / ColourSpace};{colour.Blue * 100 / ColourSpace}"
-            );
-        }
-        return register.ToString();
+        return string.Concat(
+            colours.Select(x =>
+                $"#{x.Value};2;{x.Key.Red * 100 / ColourSpace};{x.Key.Green * 100 / ColourSpace};{x.Key.Blue * 100 / ColourSpace}"
+            )
+        );
     }
 
     private static SKColor ReducedColorSpace(SKColor colour) =>
         new(
             (byte)(colour.Red * ColourSpace / 255),
             (byte)(colour.Green * ColourSpace / 255),
-            (byte)(colour.Blue * ColourSpace / 255),
-            (byte)(colour.Alpha > 50 ? 1 : 0)
+            (byte)(colour.Blue * ColourSpace / 255)
         );
 }
