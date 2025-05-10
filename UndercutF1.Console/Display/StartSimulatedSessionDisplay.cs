@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Spectre.Console;
 using Spectre.Console.Rendering;
-using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
@@ -17,7 +16,7 @@ public record StartSimulatedSessionOptions
 public class StartSimulatedSessionDisplay(
     State state,
     StartSimulatedSessionOptions displayOptions,
-    IOptions<LiveTimingOptions> options
+    IOptions<Options> options
 ) : IDisplay
 {
     public Screen Screen => Screen.StartSimulatedSession;

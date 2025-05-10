@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Console.Graphics;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
@@ -18,12 +19,12 @@ public class TimingHistoryDisplay(
     LapCountProcessor lapCount,
     SessionInfoProcessor sessionInfo,
     TerminalInfoProvider terminalInfo,
-    IOptions<LiveTimingOptions> options
+    IOptions<Options> options
 ) : IDisplay
 {
     public Screen Screen => Screen.TimingHistory;
 
-    private const int LEFT_OFFSET = 68; // The normal width of the timing table
+    private const int LEFT_OFFSET = 69; // The normal width of the timing table
     private const int BOTTOM_OFFSET = 2;
     private const int LAPS_IN_CHART = 15;
 
@@ -41,6 +42,7 @@ public class TimingHistoryDisplay(
         Color = SKColor.Parse("FF0000"),
         IsStroke = true,
         Typeface = _boldTypeface,
+        IsAntialias = false,
     };
     private static readonly SKTypeface _boldTypeface = SKTypeface.FromFamilyName(
         "Consolas",
@@ -48,6 +50,14 @@ public class TimingHistoryDisplay(
         width: SKFontStyleWidth.Normal,
         slant: SKFontStyleSlant.Upright
     );
+
+    private static readonly SolidColorPaint _lightGrayPaint = new(SKColors.LightGray);
+    private static readonly SolidColorPaint _labelsPaint = new(SKColors.LightGray);
+
+    private static readonly SolidColorPaint _whitePaint = new(SKColors.White)
+    {
+        IsAntialias = false,
+    };
 
     private string[] _chartPanelControlSequence = [];
 
@@ -179,6 +189,7 @@ public class TimingHistoryDisplay(
         if (
             !terminalInfo.IsITerm2ProtocolSupported.Value
             && !terminalInfo.IsKittyProtocolSupported.Value
+            && !terminalInfo.IsSixelSupported.Value
         )
         {
             return [];
@@ -191,12 +202,19 @@ public class TimingHistoryDisplay(
 
         var widthCells = Terminal.Size.Width - LEFT_OFFSET;
         var heightCells = Terminal.Size.Height - BOTTOM_OFFSET;
-        var ratio = widthCells * 1d / heightCells;
 
-        var heightPixels = 1000;
-        var widthPixels = (int)Math.Ceiling(heightPixels * ratio);
+        var terminalHeightPixels = terminalInfo.TerminalSize.Value.Height;
+        var heightPerCell = terminalHeightPixels / Terminal.Size.Height;
 
-        var surface = SKSurface.Create(new SKImageInfo(widthPixels, heightPixels));
+        var terminalWidthPixels = terminalInfo.TerminalSize.Value.Width;
+        var widthPerCell = terminalWidthPixels / Terminal.Size.Width;
+
+        var heightPixels = heightCells * heightPerCell;
+        var widthPixels = widthCells * widthPerCell;
+
+        var surface = SKSurface.Create(
+            new SKImageInfo(widthPixels, heightPixels, SKColorType.Rgb565)
+        );
         var canvas = surface.Canvas;
 
         var gapSeriesData = driverList
@@ -281,11 +299,12 @@ public class TimingHistoryDisplay(
                 return new LineSeries<double?>(x.Value)
                 {
                     Name = x.Key,
-                    Fill = new SolidColorPaint(SKColors.Transparent),
+                    Fill = new SolidColorPaint(SKColors.Transparent) { IsAntialias = false },
                     GeometryStroke = null,
                     GeometryFill = null,
                     Stroke = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
                     {
+                        IsAntialias = false,
                         StrokeThickness = 2,
                     },
                     IsVisible = state.SelectedDrivers.Contains(x.Key),
@@ -294,7 +313,10 @@ public class TimingHistoryDisplay(
                         p.Index == x.Value.Count - 1 ? driver.Tla! : string.Empty,
                     DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Right,
                     DataLabelsSize = 16,
-                    DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour)),
+                    DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
+                    {
+                        IsAntialias = false,
+                    },
                     DataPadding = new LiveChartsCore.Drawing.LvcPoint(1, 0),
                 };
             })
@@ -320,20 +342,20 @@ public class TimingHistoryDisplay(
             yMinStep: 1000
         );
         var lapChartImage = lapChart.GetImage();
-        canvas.DrawImage(lapChartImage, new SKPoint(0, 500));
+        canvas.DrawImage(lapChartImage, new SKPoint(0, heightPixels / 2));
 
         if (options.Value.Verbose)
         {
             // Add some debug information when verbose mode is on
             canvas.DrawRect(0, 0, widthPixels - 1, heightPixels - 1, _errorPaint);
-            canvas.DrawText($"Ratio: {ratio}", 5, 20, _errorPaint);
+            canvas.DrawText($"Width: {widthPixels}", 5, 20, _errorPaint);
+            canvas.DrawText($"Height: {heightPixels}", 5, 40, _errorPaint);
         }
-
-        var imageData = surface.Snapshot().Encode();
-        var base64 = Convert.ToBase64String(imageData.AsSpan());
 
         if (terminalInfo.IsKittyProtocolSupported.Value)
         {
+            var imageData = surface.Snapshot().Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return
             [
                 TerminalGraphics.KittyGraphicsSequenceDelete(),
@@ -342,7 +364,15 @@ public class TimingHistoryDisplay(
         }
         else if (terminalInfo.IsITerm2ProtocolSupported.Value)
         {
+            var imageData = surface.Snapshot().Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return [TerminalGraphics.ITerm2GraphicsSequence(heightCells, widthCells, base64)];
+        }
+        else if (terminalInfo.IsSixelSupported.Value)
+        {
+            var bitmap = SKBitmap.FromImage(surface.Snapshot());
+            var sixelData = Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width);
+            return [TerminalGraphics.SixelGraphicsSequence(sixelData)];
         }
 
         return ["Unexpected error, shouldn't have got here. Please report!"];
@@ -369,7 +399,7 @@ public class TimingHistoryDisplay(
             Title = new LabelVisual
             {
                 Text = title,
-                Paint = new SolidColorPaint(SKColors.White),
+                Paint = _whitePaint,
                 TextSize = 20,
             },
             XAxes =
@@ -377,7 +407,7 @@ public class TimingHistoryDisplay(
                 new Axis
                 {
                     MinStep = 1,
-                    LabelsPaint = new SolidColorPaint(SKColors.LightGray),
+                    LabelsPaint = _labelsPaint,
                     Labeler = v =>
                         axisStartLap > 0 ? (v + axisStartLap + 1).ToString() : (v + 1).ToString(),
                 },
@@ -386,8 +416,8 @@ public class TimingHistoryDisplay(
             [
                 new Axis
                 {
-                    SeparatorsPaint = new SolidColorPaint(SKColors.LightGray),
-                    LabelsPaint = new SolidColorPaint(SKColors.LightGray),
+                    SeparatorsPaint = _lightGrayPaint,
+                    LabelsPaint = _labelsPaint,
                     MinLimit = axisMin,
                     MaxLimit = axisMax,
                     Labeler = labeler,

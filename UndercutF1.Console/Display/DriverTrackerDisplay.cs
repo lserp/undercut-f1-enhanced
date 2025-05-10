@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using SkiaSharp;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Console.Graphics;
 using UndercutF1.Data;
 
 namespace UndercutF1.Console;
@@ -17,6 +18,7 @@ public class DriverTrackerDisplay : IDisplay
     {
         Color = SKColor.Parse("666666"),
         StrokeWidth = 6,
+        IsAntialias = false,
     };
     private static readonly SKPaint _cornerTextPaint = new()
     {
@@ -28,12 +30,19 @@ public class DriverTrackerDisplay : IDisplay
             width: SKFontStyleWidth.Normal,
             slant: SKFontStyleSlant.Upright
         ),
+        IsAntialias = false,
+    };
+    private static readonly SKPaint _selectedPaint = new()
+    {
+        Color = SKColor.Parse("FFFFFF"),
+        IsAntialias = false,
     };
     private static readonly SKPaint _errorPaint = new()
     {
         Color = SKColor.Parse("FF0000"),
         IsStroke = true,
         Typeface = _boldTypeface,
+        IsAntialias = false,
     };
     private static readonly SKTypeface _boldTypeface = SKTypeface.FromFamilyName(
         "Consolas",
@@ -52,7 +61,7 @@ public class DriverTrackerDisplay : IDisplay
     private readonly ExtrapolatedClockProcessor _extrapolatedClock;
     private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TerminalInfoProvider _terminalInfo;
-    private readonly IOptions<LiveTimingOptions> _options;
+    private readonly IOptions<Options> _options;
     private TransformFactors? _transform = null;
 
     private string[] _trackMapControlSequence = [];
@@ -68,7 +77,7 @@ public class DriverTrackerDisplay : IDisplay
         ExtrapolatedClockProcessor extrapolatedClock,
         IDateTimeProvider dateTimeProvider,
         TerminalInfoProvider terminalInfo,
-        IOptions<LiveTimingOptions> options
+        IOptions<Options> options
     )
     {
         _state = state;
@@ -95,6 +104,7 @@ public class DriverTrackerDisplay : IDisplay
         if (
             !_terminalInfo.IsITerm2ProtocolSupported.Value
             && !_terminalInfo.IsKittyProtocolSupported.Value
+            && !_terminalInfo.IsSixelSupported.Value
         )
         {
             // We don't think the current terminal supports the iTerm2 graphics protocol
@@ -247,6 +257,7 @@ public class DriverTrackerDisplay : IDisplay
             !(
                 _terminalInfo.IsITerm2ProtocolSupported.Value
                 || _terminalInfo.IsKittyProtocolSupported.Value
+                || _terminalInfo.IsSixelSupported.Value
             )
             || _sessionInfo.Latest.CircuitPoints.Count == 0
         )
@@ -256,7 +267,9 @@ public class DriverTrackerDisplay : IDisplay
 
         _transform ??= GetTransformFactors();
 
-        var surface = SKSurface.Create(new SKImageInfo(_transform.MaxX, _transform.MaxY));
+        var surface = SKSurface.Create(
+            new SKImageInfo(_transform.MaxX, _transform.MaxY, SKColorType.Rgb565)
+        );
         var canvas = surface.Canvas;
 
         var circuitPoints = _sessionInfo.Latest.CircuitPoints.Select(x =>
@@ -302,12 +315,13 @@ public class DriverTrackerDisplay : IDisplay
                         Color = SKColor.Parse(data.TeamColour),
                         TextSize = 24,
                         Typeface = _boldTypeface,
+                        IsAntialias = false,
                     };
 
                     // Draw a white box around the driver currently selected by the cursor
                     if (_timingData.Latest.Lines[driverNumber].Line == _state.CursorOffset)
                     {
-                        var rectPaint = new SKPaint { Color = SKColor.Parse("FFFFFF") };
+                        var rectPaint = _selectedPaint;
                         canvas.DrawRoundRect(x - 8, y - 12, 65, 24, 4, 4, rectPaint);
                     }
 
@@ -324,6 +338,8 @@ public class DriverTrackerDisplay : IDisplay
             Convert.ToDouble(_transform.MaxX) / Convert.ToDouble(_transform.MaxY);
         // Terminal cells are ~twice as high as they are wide, so take that in to consideration
         var availableAspectRatio = windowWidth / (windowHeight * 2.2);
+
+        var cellAspectRatio = 1 / _terminalInfo.TerminalSize.Value.CellAspectRatio;
 
         if (targetAspectRatio > availableAspectRatio)
         {
@@ -366,11 +382,12 @@ public class DriverTrackerDisplay : IDisplay
             canvas.DrawText($"Transforms: {_transform}", 5, 120, _errorPaint);
         }
 
-        var imageData = surface.Snapshot().Encode();
-        var base64 = Convert.ToBase64String(imageData.AsSpan());
+        var image = surface.Snapshot();
 
         if (_terminalInfo.IsKittyProtocolSupported.Value)
         {
+            var imageData = image.Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return
             [
                 TerminalGraphics.KittyGraphicsSequenceDelete(),
@@ -379,7 +396,15 @@ public class DriverTrackerDisplay : IDisplay
         }
         else if (_terminalInfo.IsITerm2ProtocolSupported.Value)
         {
+            var imageData = image.Encode();
+            var base64 = Convert.ToBase64String(imageData.AsSpan());
             return [TerminalGraphics.ITerm2GraphicsSequence(windowHeight, windowWidth, base64)];
+        }
+        else if (_terminalInfo.IsSixelSupported.Value)
+        {
+            var bitmap = SKBitmap.FromImage(image);
+            var sixelData = Sixel.ImageToSixel(bitmap.Pixels, bitmap.Width);
+            return [TerminalGraphics.SixelGraphicsSequence(sixelData)];
         }
 
         return ["Unexpected error, shouldn't have got here. Please report!"];
@@ -388,6 +413,7 @@ public class DriverTrackerDisplay : IDisplay
     private TransformFactors GetTransformFactors()
     {
         var circuitPoints = _sessionInfo.Latest.CircuitPoints;
+        var terminalSize = _terminalInfo.TerminalSize.Value;
 
         // Shift all points in to positive coordinates
         var minX = circuitPoints.Min(x => x.x);
@@ -398,15 +424,21 @@ public class DriverTrackerDisplay : IDisplay
         var maxX = circuitPoints.Max(x => x.x);
         var maxY = circuitPoints.Max(x => x.y);
 
-        // For high DPI values, target half the screen height for the image. This is because the terminal is likely giving us the real height in pixels.
-        // If we get a lower DPI, the tarminal is likely giving us the scaled pixel height (i.e. points) so use it directly.
-        // Here DPI really means pixels per character cell
-        var windowHeightPx = _terminalInfo.TerminalSize.Value?.Height ?? 1200;
-        var screenDpi = windowHeightPx / Terminal.Size.Height;
-        var targetHeight = screenDpi > 35 ? windowHeightPx / 2 : windowHeightPx;
-        targetHeight -= TOP_OFFSET + BOTTOM_OFFSET;
+        var targetAspectRatio = maxX / (double)maxY;
 
-        var imageScaleFactor = maxY / targetHeight;
+        var availableRows = terminalSize.Rows - TOP_OFFSET - BOTTOM_OFFSET;
+        var availableColumns = terminalSize.Columns - LEFT_OFFSET - 2;
+        var availableAspectRatio =
+            terminalSize.ColumnsToPixels(availableColumns)
+            / (double)terminalSize.RowsToPixels(availableRows);
+
+        var imageScaleFactor =
+            availableAspectRatio > targetAspectRatio
+                ? maxY / (terminalSize.RowsToPixels(availableRows) - (IMAGE_PADDING * 3))
+                : maxX / (terminalSize.ColumnsToPixels(availableColumns) - (IMAGE_PADDING * 3));
+
+        // Add one to ensure we always have a smaller image than we need
+        imageScaleFactor += 1;
 
         return new(
             ScaleFactor: imageScaleFactor,

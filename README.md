@@ -98,8 +98,20 @@ The `Driver Tracker` page shows a track map overlaid with selected drivers. Use 
 
 ![Driver Tracker Page](docs/screenshots/driver-tracker.png)
 
-> [!NOTE]  
-Currently the track map is only supported in terminal which support euther the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) or the [iTerm2 Inline Image Protocol](https://iterm2.com/documentation-images.html). I personally try to test on iTerm2, Ghostty, WezTerm, and Kitty. If the terminal you use doesn't work, please raise an issue and I'll try to implement support!
+> [!NOTE]
+> The Driver Tracker and Timing History charts work using terminal graphics protocols. UndercutF1 supports three protocols:
+>
+> - [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
+> - [iTerm2 Inline Image Protocol](https://iterm2.com/documentation-images.html)
+> - [Sixel](https://www.vt100.net/docs/vt3xx-gp/chapter14.html)
+>
+> Between these three protocols, UndercutF1 should support a wide variety of terminals.
+> I personally try to test on iTerm2, Ghostty, WezTerm, and Kitty.
+> Windows Terminal should be supported via Sixel, but is rarely tested.
+>
+> Run `undercutf1 info` to see if UndercutF1 detects graphics protocol support in your terminal.
+>
+> If the terminal you use doesn't show the graphics, please raise an issue and I'll try to implement support!
 
 ### Tyre Stint / Strategy
 
@@ -279,14 +291,15 @@ UndercutF1 can be configured using either a simple `config.json` file, through t
 
 To view what configuration is currently being used, open the <kbd>I</kbd> `Info` screen when the app starts up.
 
-| JSON Path              | Command Line       | Environment Variable              | Description                                                                                                                                                                               |
-| ---------------------- | ------------------ | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataDirectory`        | `--data-directory` | `UNDERCUTF1_DATADIRECTORY`        | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription.                 |
-| `logDirectory`         | `--log-directory`  | `UNDERCUTF1_LOGDIRECTORY`         | The directory to which logs are written to.                                                                                                                                               |
-| `verbose`              | `-v\|--verbose`    | `UNDERCUTF1_VERBOSE`              | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                                   |
-| `apiEnabled`           | `--with-api`       | `UNDERCUTF1_APIENABLED`           | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                                            |
-| `notify`               | `--notify`         | `UNDERCUTF1_NOTIFY`               | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                                        |
-| `preferFfmpegPlayback` | `--prefer-ffmpeg`  | `UNDERCUTF1_PREFERFFMPEGPLAYBACK` | Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123 respectively. `ffplay` is always used on Windows. Default: `false`. Values: `true` or `false`. |
+| JSON Path               | Command Line                | Environment Variable               | Description                                                                                                                                                                               |
+| ----------------------- | --------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataDirectory`         | `--data-directory`          | `UNDERCUTF1_DATADIRECTORY`         | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription.                 |
+| `logDirectory`          | `--log-directory`           | `UNDERCUTF1_LOGDIRECTORY`          | The directory to which logs are written to.                                                                                                                                               |
+| `verbose`               | `-v\|--verbose`             | `UNDERCUTF1_VERBOSE`               | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                                   |
+| `apiEnabled`            | `--with-api`                | `UNDERCUTF1_APIENABLED`            | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                                            |
+| `notify`                | `--notify`                  | `UNDERCUTF1_NOTIFY`                | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                                        |
+| `preferFfmpegPlayback`  | `--prefer-ffmpeg`           | `UNDERCUTF1_PREFERFFMPEGPLAYBACK`  | Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123 respectively. `ffplay` is always used on Windows. Default: `false`. Values: `true` or `false`. |
+| `forceGraphicsProtocol` | `--force-graphics-protocol` | `UNDERCUTF1_FORCEGRAPHICSPROTOCOL` | Forces the usage of a particular graphics protocol instead of using heuristics to find a supported one. Values: `Kitty`, `Sixel`, or `iTerm`.                                             |
 
 ### Default Directories
 

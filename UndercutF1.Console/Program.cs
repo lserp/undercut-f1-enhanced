@@ -1,6 +1,6 @@
 ﻿using System.CommandLine;
 using UndercutF1.Console;
-using UndercutF1.Data;
+using UndercutF1.Console.Graphics;
 
 var rootCommand = new RootCommand("undercutf1");
 
@@ -30,6 +30,10 @@ var preferFfmpegOption = new Option<bool?>(
     "--prefer-ffmpeg",
     "Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123. `ffplay` is always used on Windows"
 );
+var forceGraphicsProtocol = new Option<GraphicsProtocol?>(
+    "--force-graphics-protocol",
+    "Forces the usage of a particular graphics protocol."
+);
 
 rootCommand.AddGlobalOption(isVerboseOption);
 rootCommand.AddGlobalOption(isApiEnabledOption);
@@ -37,6 +41,7 @@ rootCommand.AddGlobalOption(dataDirectoryOption);
 rootCommand.AddGlobalOption(logDirectoryOption);
 rootCommand.AddGlobalOption(notifyOption);
 rootCommand.AddGlobalOption(preferFfmpegOption);
+rootCommand.AddGlobalOption(forceGraphicsProtocol);
 
 rootCommand.SetHandler(
     CommandHandler.Root,
@@ -45,7 +50,8 @@ rootCommand.SetHandler(
     logDirectoryOption,
     isVerboseOption,
     notifyOption,
-    preferFfmpegOption
+    preferFfmpegOption,
+    forceGraphicsProtocol
 );
 
 var importCommand = new Command(
@@ -85,15 +91,35 @@ rootCommand.AddCommand(importCommand);
 var infoCommand = new Command(
     "info",
     """
-    Prints diagnostics about undercutf1, and the terminal in the command is run in.ƒ
+    Prints diagnostics about undercutf1, and the terminal in the command is run in.
     """
 );
 infoCommand.SetHandler(
     CommandHandler.GetInfo,
     dataDirectoryOption,
     logDirectoryOption,
-    isVerboseOption
+    isVerboseOption,
+    forceGraphicsProtocol
 );
 rootCommand.AddCommand(infoCommand);
+
+var graphicsProtocolArgument = new Argument<GraphicsProtocol>("The graphics protocol to use");
+var imageFilePathArgument = new Argument<FileInfo>("file");
+
+var imageCommand = new Command(
+    "image",
+    """
+    Displays the image from the provided filepath in the terminal, using the appropiate graphics protocol.
+    """
+);
+imageCommand.AddArgument(imageFilePathArgument);
+imageCommand.AddArgument(graphicsProtocolArgument);
+imageCommand.SetHandler(
+    CommandHandler.OutputImage,
+    imageFilePathArgument,
+    graphicsProtocolArgument,
+    isVerboseOption
+);
+rootCommand.AddCommand(imageCommand);
 
 await rootCommand.InvokeAsync(args);

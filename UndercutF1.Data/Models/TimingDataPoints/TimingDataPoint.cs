@@ -1,5 +1,3 @@
-using Whisper.net;
-
 namespace UndercutF1.Data;
 
 public sealed record TimingDataPoint : ILiveTimingDataPoint

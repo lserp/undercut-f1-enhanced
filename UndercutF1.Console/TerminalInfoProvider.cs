@@ -1,22 +1,25 @@
 using System.Buffers;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
+using UndercutF1.Console.Graphics;
 
 namespace UndercutF1.Console;
 
 public sealed partial class TerminalInfoProvider
 {
+    private readonly IOptions<Options> _options;
     private readonly ILogger<TerminalInfoProvider> _logger;
 
     private static readonly string[] ITERM_PROTOCOL_SUPPORTED_TERMINALS = ["iterm", "wezterm"];
 
-    [GeneratedRegex(@"\u001B_G(.+)\u001B\\")]
+    [GeneratedRegex(@"\e_G(.+)\e\\")]
     private static partial Regex TerminalKittyGraphicsResponseRegex();
 
-    [GeneratedRegex(@"\u001B\[\?2026;(\d+)\$y")]
+    [GeneratedRegex(@"\e\[\?2026;(\d+)\$y")]
     private static partial Regex TerminalSynchronizedOutputResponseRegex();
 
-    [GeneratedRegex(@"\u001B\[4;(\d+);(\d+)t")]
+    [GeneratedRegex(@"\e\[4;(\d+);(\d+)t")]
     private static partial Regex TerminalSizeResponseRegex();
 
     /// <summary>
@@ -34,6 +37,13 @@ public sealed partial class TerminalInfoProvider
     public Lazy<bool> IsKittyProtocolSupported { get; }
 
     /// <summary>
+    /// Returns <see langword="true"/> if the current terminal supports Sixel graphics.
+    /// This is done by checking the terminals response to a primary device attributes escape code.
+    /// </summary>
+    /// <returns><see langword="true" /> if the current terminal supports Sixel graphics.</returns>
+    public Lazy<bool> IsSixelSupported { get; }
+
+    /// <summary>
     /// Returns <see langword="true" /> if the current terminal support Synchronized Output,
     /// as described in https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
     /// and https://gitlab.com/gnachman/iterm2/-/wikis/synchronized-updates-spec.
@@ -42,25 +52,34 @@ public sealed partial class TerminalInfoProvider
 
     /// <summary>
     /// Returns the size of the terminal in pizels. <c>null</c> if terminal size could not be determined.
+    /// If the terminal is likely returning raw pizels instead of points, HiDpi will be set to true.
     /// </summary>
-    public Lazy<(int Height, int Width)?> TerminalSize { get; private set; }
+    public Lazy<TerminalSizeInfo> TerminalSize { get; private set; }
 
-    public TerminalInfoProvider(ILogger<TerminalInfoProvider> logger)
+    public TerminalInfoProvider(IOptions<Options> options, ILogger<TerminalInfoProvider> logger)
     {
+        _options = options;
         _logger = logger;
         IsITerm2ProtocolSupported = new Lazy<bool>(GetIsITerm2ProtocolSupported);
         IsKittyProtocolSupported = new Lazy<bool>(GetKittyProtocolSupported);
+        IsSixelSupported = new Lazy<bool>(GetSixelSupported);
         IsSynchronizedOutputSupported = new Lazy<bool>(GetSynchronizedOutputSupported);
-        TerminalSize = new Lazy<(int, int)?>(GetTerminalSize);
+        TerminalSize = new Lazy<TerminalSizeInfo>(GetTerminalSize);
         Terminal.Resized += (_new) =>
         {
-            TerminalSize = new Lazy<(int, int)?>(GetTerminalSize);
+            TerminalSize = new Lazy<TerminalSizeInfo>(GetTerminalSize);
             _ = TerminalSize.Value;
         };
     }
 
     private bool GetIsITerm2ProtocolSupported()
     {
+        // Override support response if config is set
+        if (_options.Value.ForceGraphicsProtocol.HasValue)
+        {
+            return _options.Value.ForceGraphicsProtocol.Value == GraphicsProtocol.iTerm;
+        }
+
         var termProgram = Environment.GetEnvironmentVariable("TERM_PROGRAM") ?? string.Empty;
         var supported = ITERM_PROTOCOL_SUPPORTED_TERMINALS.Any(x =>
             termProgram.Contains(x, StringComparison.InvariantCultureIgnoreCase)
@@ -71,14 +90,20 @@ public sealed partial class TerminalInfoProvider
 
     private bool GetKittyProtocolSupported()
     {
+        // Override support response if config is set
+        if (_options.Value.ForceGraphicsProtocol.HasValue)
+        {
+            return _options.Value.ForceGraphicsProtocol.Value == GraphicsProtocol.Kitty;
+        }
+
         PrepareTerminal();
-        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        var buffer = ArrayPool<byte>.Shared.Rent(128);
         try
         {
             // Query the terminal with a graphic protocol specific escape code
-            Terminal.Out("\u001B_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\u001B\\");
+            Terminal.Out("\e_Gi=31,s=1,v=1,a=q,t=d,f=24;AAAA\e\\");
             // Also send a device attributes escape code, so that there is always something to read from stdin
-            Terminal.Out("\u001B[c");
+            Terminal.Out("\e[c");
 
             // Expected response: <ESC>_Gi=31;error message or OK<ESC>\
             Terminal.Read(buffer);
@@ -98,7 +123,7 @@ public sealed partial class TerminalInfoProvider
                 Util.Sanitize(str)
             );
 
-            if (match.Success && !str.Contains("\u001B[?"))
+            if (match.Success && !str.Contains("\e[?"))
             {
                 DiscardExtraResponse();
             }
@@ -112,19 +137,18 @@ public sealed partial class TerminalInfoProvider
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
-            CleanupTerminal();
         }
     }
 
     private bool GetSynchronizedOutputSupported()
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        var buffer = ArrayPool<byte>.Shared.Rent(128);
         try
         {
             // Send a DECRQM query to the terminal to check for support
-            Terminal.Out("\u001B[?2026$p");
+            Terminal.Out("\e[?2026$p");
             // Also send a device attributes escape code, so that there is always something to read from stdin
-            Terminal.Out("\u001B[c");
+            Terminal.Out("\e[c");
 
             // Expected response: <ESC> [ ? 2026 ; 1 $ y
             Terminal.Read(buffer);
@@ -150,12 +174,12 @@ public sealed partial class TerminalInfoProvider
 
             // DECRQM response with \e[? as well, so ignore first 3 chars then check for \e[? again to see if we've
             // already read the device attribute query
-            if (match.Success && !str[3..].Contains("\u001B[?"))
+            if (match.Success && !str[3..].Contains("\e[?"))
             {
                 DiscardExtraResponse();
             }
 
-            return match.Success;
+            return supported;
         }
         catch (Exception e)
         {
@@ -168,16 +192,16 @@ public sealed partial class TerminalInfoProvider
         }
     }
 
-    private (int Height, int Width)? GetTerminalSize()
+    private TerminalSizeInfo GetTerminalSize()
     {
         PrepareTerminal();
-        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        var buffer = ArrayPool<byte>.Shared.Rent(128);
         try
         {
             // Send a DCS query to the terminal to query terminal size
-            Terminal.Out("\u001B[14t");
+            Terminal.Out("\e[14t");
             // Also send a device attributes escape code, so that there is always something to read from stdin
-            Terminal.Out("\u001B[c");
+            Terminal.Out("\e[c");
 
             // Expected response: <ESC> [ ; <height> ; <width> t
             Terminal.Read(buffer);
@@ -192,29 +216,91 @@ public sealed partial class TerminalInfoProvider
                 && int.TryParse(match.Groups[1].Captures[0].Value, out height)
                 && int.TryParse(match.Groups[2].Captures[0].Value, out width);
 
-            _logger.LogDebug(
-                "Terminal Size (px): {Height}, {Width}: {Response}",
+            var terminalSizeInfo = new TerminalSizeInfo(
                 height,
                 width,
+                Terminal.Size.Height,
+                Terminal.Size.Width,
+                height / Terminal.Size.Height,
+                width / Terminal.Size.Width
+            );
+
+            // Fudge for when iTerm terminals are using Sixel. iTerm reports it's resolution in scaled points instead of raw pixels,
+            // but when it draws Sixels it draws raw pixels. So we double the reported terminal size to try and account for that
+            // It's quite hacky
+            if (
+                _options.Value.ForceGraphicsProtocol == GraphicsProtocol.Sixel
+                && Environment.GetEnvironmentVariable("TERM_PROGRAM") == "iTerm.app"
+            )
+            {
+                terminalSizeInfo = terminalSizeInfo with
+                {
+                    Height = terminalSizeInfo.Height * 2,
+                    Width = terminalSizeInfo.Width * 2,
+                    PixelsPerRow = terminalSizeInfo.PixelsPerRow * 2,
+                    PixelsPerColumn = terminalSizeInfo.PixelsPerColumn * 2,
+                };
+            }
+
+            _logger.LogDebug(
+                "Terminal Size: {TerminalSizeInfo}: {Response}",
+                terminalSizeInfo,
                 Util.Sanitize(str)
             );
 
-            if (!str.Contains("\u001B[?"))
+            if (!str.Contains("\e[?"))
             {
                 DiscardExtraResponse();
             }
 
-            return height > 0 && width > 0 ? (height, width) : null;
+            return terminalSizeInfo;
         }
         catch (Exception e)
         {
             _logger.LogError(e, "Failed to fetch terminal size in pixels");
-            return null;
+            return new(1, 1, 1, 1, 1, 1);
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
-            CleanupTerminal();
+        }
+    }
+
+    private bool GetSixelSupported()
+    {
+        // Override support response if config is set
+        if (_options.Value.ForceGraphicsProtocol.HasValue)
+        {
+            return _options.Value.ForceGraphicsProtocol.Value == GraphicsProtocol.Sixel;
+        }
+
+        PrepareTerminal();
+        var buffer = ArrayPool<byte>.Shared.Rent(128);
+        try
+        {
+            // Send a primary device attributes request
+            Terminal.Out("\e[c");
+
+            // Expected response: <ESC> [ ? [<attr> ; <attr> ; ... <attr>] c
+            // Attributes are a semicolon seperated list
+            Terminal.Read(buffer);
+
+            // Sixel support is indicated with attribute 4, see https://vt100.net/docs/vt510-rm/DA1.html
+            // Trim the beginning and end of the response to get just the attribute list
+            var response = Encoding.ASCII.GetString(buffer).TrimEnd((char)0)[2..^1];
+            var supportsSixel = response.Split(';').Contains("4");
+
+            _logger.LogDebug(
+                "Supports Sixel {Support}, Response: {Response}",
+                supportsSixel,
+                Util.Sanitize(response)
+            );
+
+            return supportsSixel;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
     }
 
@@ -230,26 +316,35 @@ public sealed partial class TerminalInfoProvider
         }
     }
 
-    private void CleanupTerminal()
-    {
-        if (IsSynchronizedOutputSupported.Value)
-        {
-            Terminal.Out(TerminalGraphics.BeginSynchronizedUpdate());
-        }
-    }
-
     private void DiscardExtraResponse()
     {
-        var buffer = ArrayPool<byte>.Shared.Rent(32);
+        var buffer = ArrayPool<byte>.Shared.Rent(128);
         try
         {
+            _logger.LogDebug("Reading extra device attr response to discard");
             // Got a response to the check, so read and throw away the device attributes response as well
             _ = Terminal.Read(buffer);
-            _logger.LogDebug("Reading device attr response {Res}", Util.Sanitize(buffer));
+            _logger.LogDebug("Discarded extra response");
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
+
+    public record struct TerminalSizeInfo(
+        int Height,
+        int Width,
+        int Rows,
+        int Columns,
+        int PixelsPerRow,
+        int PixelsPerColumn
+    )
+    {
+        public readonly double CellAspectRatio => PixelsPerColumn / (double)PixelsPerRow;
+
+        public int RowsToPixels(int rows) => rows * PixelsPerRow;
+
+        public int ColumnsToPixels(int columns) => columns * PixelsPerColumn;
+    };
 }
