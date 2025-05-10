@@ -58,14 +58,6 @@ public class ConsoleLoop(
 
             try
             {
-                if (terminalInfo.IsSynchronizedOutputSupported.Value)
-                {
-                    await Terminal.OutAsync(
-                        TerminalGraphics.BeginSynchronizedUpdate(),
-                        cancellationToken
-                    );
-                }
-
                 contentPanel = display is not null
                     ? await display.GetContentAsync()
                     : new Panel($"Unknown Display Selected: {state.CurrentScreen}").Expand();
@@ -77,6 +69,14 @@ public class ConsoleLoop(
                 var output = AnsiConsole
                     .Console.ToAnsi(layout)
                     .Replace(Environment.NewLine, "\r\n");
+
+                if (terminalInfo.IsSynchronizedOutputSupported.Value)
+                {
+                    await Terminal.OutAsync(
+                        TerminalGraphics.BeginSynchronizedUpdate(),
+                        cancellationToken
+                    );
+                }
 
                 if (_previousDraw != output)
                 {
