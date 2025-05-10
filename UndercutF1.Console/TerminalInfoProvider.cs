@@ -225,13 +225,10 @@ public sealed partial class TerminalInfoProvider
                 width / Terminal.Size.Width
             );
 
-            // Fudge for when iTerm terminals are using Sixel. iTerm reports it's resolution in scaled points instead of raw pixels,
-            // but when it draws Sixels it draws raw pixels. So we double the reported terminal size to try and account for that
+            // Fudge for when iTerm because it reports it's resolution in scaled points instead of raw pixels, but when
+            // it draws Sixels it draws raw pixels. So we double the reported terminal size to try and account for that
             // It's quite hacky
-            if (
-                _options.Value.ForceGraphicsProtocol == GraphicsProtocol.Sixel
-                && Environment.GetEnvironmentVariable("TERM_PROGRAM") == "iTerm.app"
-            )
+            if (Environment.GetEnvironmentVariable("TERM_PROGRAM") == "iTerm.app")
             {
                 terminalSizeInfo = terminalSizeInfo with
                 {
