@@ -98,8 +98,20 @@ The `Driver Tracker` page shows a track map overlaid with selected drivers. Use 
 
 ![Driver Tracker Page](docs/screenshots/driver-tracker.png)
 
-> [!NOTE]  
-Currently the track map is only supported in terminal which support euther the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) or the [iTerm2 Inline Image Protocol](https://iterm2.com/documentation-images.html). I personally try to test on iTerm2, Ghostty, WezTerm, and Kitty. If the terminal you use doesn't work, please raise an issue and I'll try to implement support!
+> [!NOTE]
+> The Driver Tracker and Timing History charts work using terminal graphics protocols. UndercutF1 supports three protocols:
+>
+> - [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
+> - [iTerm2 Inline Image Protocol](https://iterm2.com/documentation-images.html)
+> - [Sixel](https://www.vt100.net/docs/vt3xx-gp/chapter14.html)
+>
+> Between these three protocols, UndercutF1 should support a wide variety of terminals.
+> I personally try to test on iTerm2, Ghostty, WezTerm, and Kitty.
+> Windows Terminal should be supported via Sixel, but is rarely tested.
+>
+> Run `undercutf1 info` to see if UndercutF1 detects graphics protocol support in your terminal.
+>
+> If the terminal you use doesn't show the graphics, please raise an issue and I'll try to implement support!
 
 ### Tyre Stint / Strategy
 
