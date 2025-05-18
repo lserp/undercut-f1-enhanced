@@ -1,4 +1,5 @@
 using LiveChartsCore;
+using LiveChartsCore.Defaults;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Painting;
 using LiveChartsCore.SkiaSharpView.SKCharts;
@@ -160,14 +161,6 @@ public class TimingHistoryDisplay(
             _ => $"[yellow dim italic]+{time}[/]",
         };
 
-    private string GetPositionChangeMarkup(int? change) =>
-        change switch
-        {
-            < 0 => "[green]▲[/]",
-            > 0 => "[yellow]▼[/]",
-            _ => "",
-        };
-
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Style",
         "IDE0046:Convert to conditional expression",
@@ -219,19 +212,21 @@ public class TimingHistoryDisplay(
 
         var gapSeriesData = driverList
             .Latest.Where(x => x.Key != "_kf") // Data quirk, dictionaries include _kf which obviously isn't a driver
-            .ToDictionary(x => x.Key, _ => new List<double?>());
+            .ToDictionary(x => x.Key, _ => new List<ObservablePoint>());
         var lapSeriesData = driverList
             .Latest.Where(x => x.Key != "_kf") // Data quirk, dictionaries include _kf which obviously isn't a driver
-            .ToDictionary(x => x.Key, _ => new List<double?>());
+            .ToDictionary(x => x.Key, _ => new List<ObservablePoint>());
 
         var fastestLap = default(TimeSpan);
 
         // Only use data from the last LAPS_IN_CHART laps
+        // Lap numbers are 1-indexed, cursor is 0-indexed, so offset by 1
+        var minLap = state.CursorOffset - LAPS_IN_CHART + 1;
+        var maxLap = state.CursorOffset + 1;
         foreach (
             var (lap, lines) in timingData
                 .DriversByLap.OrderBy(x => x.Key)
-                .Skip(state.CursorOffset - LAPS_IN_CHART + 1)
-                .Take(LAPS_IN_CHART)
+                .Where(x => x.Key >= minLap && x.Key <= maxLap)
         )
         {
             // Discard laps slower than 105% of the fastest car on that lap
@@ -245,21 +240,28 @@ public class TimingHistoryDisplay(
                 // We can't just null non-numbers though, because P1 should have a gap of 0
                 if (!timingData.GapToLeader?.Contains(" L") ?? true)
                 {
-                    gapSeriesData[driver].Add((double)(timingData.GapToLeaderSeconds() ?? 0));
+                    var value = new ObservablePoint(
+                        lap,
+                        (double)(timingData.GapToLeaderSeconds() ?? 0)
+                    );
+                    gapSeriesData[driver].Add(value);
                 }
                 else
                 {
-                    gapSeriesData[driver].Add(null);
+                    gapSeriesData[driver].Add(new(lap, null));
                 }
 
                 var lapTime = timingData.LastLapTime?.ToTimeSpan();
+                // Use the threshold to null out laps that are too slow
+                // (attempting to avoid in and out laps from skewing the chart)
                 if (lapTime > threshold)
                 {
-                    lapSeriesData[driver].Add(null);
+                    lapSeriesData[driver].Add(new(lap, null));
                 }
                 else
                 {
-                    lapSeriesData[driver].Add(lapTime?.TotalMilliseconds);
+                    var value = new ObservablePoint(lap, lapTime?.TotalMilliseconds);
+                    lapSeriesData[driver].Add(value);
                 }
             }
         }
@@ -269,7 +271,7 @@ public class TimingHistoryDisplay(
             {
                 var driver = driverList.Latest.GetValueOrDefault(x.Key) ?? new();
                 var colour = driver.TeamColour ?? "FFFFFF";
-                return new LineSeries<double?>(x.Value)
+                return new LineSeries<ObservablePoint?>(x.Value)
                 {
                     Name = x.Key,
                     Fill = new SolidColorPaint(SKColors.Transparent),
@@ -281,6 +283,7 @@ public class TimingHistoryDisplay(
                     },
                     IsVisible = state.SelectedDrivers.Contains(x.Key),
                     LineSmoothness = 0,
+                    // Add the drivers name next to the final data point, as a series label
                     DataLabelsFormatter = p =>
                         p.Index == x.Value.Count - 1 ? driver.Tla! : string.Empty,
                     DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Right,
@@ -296,7 +299,7 @@ public class TimingHistoryDisplay(
             {
                 var driver = driverList.Latest.GetValueOrDefault(x.Key) ?? new();
                 var colour = driver.TeamColour ?? "FFFFFF";
-                return new LineSeries<double?>(x.Value)
+                return new LineSeries<ObservablePoint?>(x.Value)
                 {
                     Name = x.Key,
                     Fill = new SolidColorPaint(SKColors.Transparent) { IsAntialias = false },
@@ -379,7 +382,7 @@ public class TimingHistoryDisplay(
     }
 
     private SKCartesianChart CreateChart(
-        LineSeries<double?>[] series,
+        LineSeries<ObservablePoint?>[] series,
         string title,
         int height,
         int width,
@@ -387,10 +390,8 @@ public class TimingHistoryDisplay(
         double? axisMin = null,
         double? axisMax = null,
         double yMinStep = 0
-    )
-    {
-        var axisStartLap = state.CursorOffset - LAPS_IN_CHART + 1;
-        return new SKCartesianChart
+    ) =>
+        new()
         {
             Series = series,
             Height = height,
@@ -402,16 +403,7 @@ public class TimingHistoryDisplay(
                 Paint = _whitePaint,
                 TextSize = 20,
             },
-            XAxes =
-            [
-                new Axis
-                {
-                    MinStep = 1,
-                    LabelsPaint = _labelsPaint,
-                    Labeler = v =>
-                        axisStartLap > 0 ? (v + axisStartLap + 1).ToString() : (v + 1).ToString(),
-                },
-            ],
+            XAxes = [new Axis { MinStep = 1, LabelsPaint = _labelsPaint }],
             YAxes =
             [
                 new Axis
@@ -425,5 +417,4 @@ public class TimingHistoryDisplay(
                 },
             ],
         };
-    }
 }
