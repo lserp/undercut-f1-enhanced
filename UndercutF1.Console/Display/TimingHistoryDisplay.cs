@@ -254,7 +254,11 @@ public class TimingHistoryDisplay(
                 var lapTime = timingData.LastLapTime?.ToTimeSpan();
                 // Use the threshold to null out laps that are too slow
                 // (attempting to avoid in and out laps from skewing the chart)
-                if (lapTime > threshold)
+                if (
+                    lapTime > threshold
+                    || timingData.InPit.GetValueOrDefault()
+                    || timingData.PitOut.GetValueOrDefault()
+                )
                 {
                     lapSeriesData[driver].Add(new(lap, null));
                 }
