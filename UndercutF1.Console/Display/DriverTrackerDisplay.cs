@@ -268,7 +268,7 @@ public class DriverTrackerDisplay : IDisplay
         _transform ??= GetTransformFactors();
 
         var surface = SKSurface.Create(
-            new SKImageInfo(_transform.MaxX, _transform.MaxY, SKColorType.Rgb565)
+            new SKImageInfo(_transform.MaxX, _transform.MaxY, SKColorType.Argb4444)
         );
         var canvas = surface.Canvas;
 

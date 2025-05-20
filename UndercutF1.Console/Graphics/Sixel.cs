@@ -19,6 +19,7 @@ public static class Sixel
 
         var colourToColourId = reducedColourSpacePixels
             .Distinct()
+            .Where(x => x.Alpha > 0)
             .Select((colour, i) => (colour, i))
             .ToDictionary(x => x.colour, x => x.i);
 
@@ -126,6 +127,7 @@ public static class Sixel
         new(
             (byte)(colour.Red * ColourSpace / 255),
             (byte)(colour.Green * ColourSpace / 255),
-            (byte)(colour.Blue * ColourSpace / 255)
+            (byte)(colour.Blue * ColourSpace / 255),
+            (byte)(colour.Alpha >= 50 ? 1 : 0)
         );
 }

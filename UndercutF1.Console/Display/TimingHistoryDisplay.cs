@@ -206,7 +206,7 @@ public class TimingHistoryDisplay(
         var widthPixels = widthCells * widthPerCell;
 
         var surface = SKSurface.Create(
-            new SKImageInfo(widthPixels, heightPixels, SKColorType.Rgb565)
+            new SKImageInfo(widthPixels, heightPixels, SKColorType.Argb4444)
         );
         var canvas = surface.Canvas;
 
