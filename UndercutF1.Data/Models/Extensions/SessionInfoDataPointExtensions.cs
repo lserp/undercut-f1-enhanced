@@ -16,4 +16,8 @@ public static class SessionInfoDataPointExtensions
 
         return dateTimeOffset.UtcDateTime;
     }
+
+    public static bool IsRace(this SessionInfoDataPoint? sessionInfo) =>
+        (sessionInfo?.Name?.EndsWith("Race") ?? true)
+        || (sessionInfo?.Name?.EndsWith("Sprint") ?? true);
 }

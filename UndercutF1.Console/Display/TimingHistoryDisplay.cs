@@ -229,21 +229,18 @@ public class TimingHistoryDisplay(
             fastestLap =
                 lines.Min(x => x.Value.LastLapTime?.ToTimeSpan()) ?? TimeSpan.FromMinutes(2);
 
-            // In a race session Discard laps slower than 105% of the fastest car on that lap
-            // This should discard laps where cars pit, as those laps aren't very useful
+            // In a race session discard laps slower than 105% of the fastest car on that lap
+            // This should discard laps where cars entered or left the pits, as those lap times aren't very useful
             // In non-race sessions, we want to see slow laps (e.g. cooldown or race-sim)
             // so use a arbitrary +1min threshold instead of 105%.
             var threshold = isRace ? fastestLap * 1.05 : fastestLap + TimeSpan.FromMinutes(1);
             foreach (var (driver, timingData) in lines)
             {
-                // Lapped cars don't have a gap to leader, so null them out
-                // We can't just null non-numbers though, because P1 should have a gap of 0
-                if (!timingData.GapToLeader?.Contains(" L") ?? true)
+                // Lapped cars don't have a gap to leader, so use the smart calc to determine the real gap
+                var gapToLeader = lines.SmartGapToLeaderSeconds(driver);
+                if (gapToLeader.HasValue)
                 {
-                    var value = new ObservablePoint(
-                        lap,
-                        (double)(timingData.GapToLeaderSeconds() ?? 0)
-                    );
+                    var value = new ObservablePoint(lap, Convert.ToDouble(gapToLeader.Value));
                     gapSeriesData[driver].Add(value);
                 }
                 else

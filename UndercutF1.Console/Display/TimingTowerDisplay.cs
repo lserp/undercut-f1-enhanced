@@ -496,12 +496,11 @@ public class TimingTowerDisplay(
     {
         var prevGapToLeader = timingData
             .DriversByLap.GetValueOrDefault(lapNumber)
-            ?.GetValueOrDefault(prevDriverNumber)
-            ?.GapToLeaderSeconds();
+            ?.SmartGapToLeaderSeconds(prevDriverNumber);
         var nextGapToLeader = timingData
             .DriversByLap.GetValueOrDefault(lapNumber)
-            ?.GetValueOrDefault(nextDriverNumber)
-            ?.GapToLeaderSeconds();
+            ?.SmartGapToLeaderSeconds(nextDriverNumber);
+
         return nextGapToLeader - prevGapToLeader ?? 0;
     }
 
