@@ -2,7 +2,7 @@ using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public class SwitchPageInputHandler(LapCountProcessor lapCountProcessor, State state)
+public class SwitchPageInputHandler(TimingDataProcessor timingDataProcessor, State state)
     : IInputHandler
 {
     public bool IsEnabled => true;
@@ -47,7 +47,7 @@ public class SwitchPageInputHandler(LapCountProcessor lapCountProcessor, State s
         switch (state.CurrentScreen)
         {
             case Screen.TimingHistory:
-                state.CursorOffset = Math.Max(lapCountProcessor.Latest.CurrentLap - 2 ?? 1, 1);
+                state.CursorOffset = Math.Max(GetLatestLap() - 1, 1);
                 break;
             case Screen.TimingTower:
             case Screen.RaceControl:
@@ -61,4 +61,11 @@ public class SwitchPageInputHandler(LapCountProcessor lapCountProcessor, State s
     }
 
     private int GetScreenIndex() => ApplicableScreens.ToList().IndexOf(state.CurrentScreen);
+
+    private int GetLatestLap() =>
+        timingDataProcessor
+            .DriversByLap.Where(x => x.Value.Count > 0)
+            .DefaultIfEmpty()
+            .MaxBy(x => x.Key)
+            .Key;
 }

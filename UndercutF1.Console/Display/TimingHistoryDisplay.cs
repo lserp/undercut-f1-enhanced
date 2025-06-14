@@ -188,10 +188,7 @@ public class TimingHistoryDisplay(
             return [];
         }
 
-        if (!sessionInfo.Latest.IsRace())
-        {
-            return [];
-        }
+        var isRace = sessionInfo.Latest.IsRace();
 
         var widthCells = Terminal.Size.Width - LEFT_OFFSET;
         var heightCells = Terminal.Size.Height - BOTTOM_OFFSET;
@@ -255,7 +252,7 @@ public class TimingHistoryDisplay(
                 // Use the threshold to null out laps that are too slow
                 // (attempting to avoid in and out laps from skewing the chart)
                 if (
-                    lapTime > threshold
+                    (isRace && lapTime > threshold)
                     || timingData.InPit.GetValueOrDefault()
                     || timingData.PitOut.GetValueOrDefault()
                 )
@@ -270,33 +267,46 @@ public class TimingHistoryDisplay(
             }
         }
 
-        var gapSeries = gapSeriesData
-            .Select(x =>
-            {
-                var driver = driverList.Latest.GetValueOrDefault(x.Key) ?? new();
-                var colour = driver.TeamColour ?? "FFFFFF";
-                return new LineSeries<ObservablePoint?>(x.Value)
+        if (isRace)
+        {
+            var gapSeries = gapSeriesData
+                .Select(x =>
                 {
-                    Name = x.Key,
-                    Fill = new SolidColorPaint(SKColors.Transparent),
-                    GeometryStroke = null,
-                    GeometryFill = null,
-                    Stroke = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
+                    var driver = driverList.Latest.GetValueOrDefault(x.Key) ?? new();
+                    var colour = driver.TeamColour ?? "FFFFFF";
+                    return new LineSeries<ObservablePoint?>(x.Value)
                     {
-                        StrokeThickness = 2,
-                    },
-                    IsVisible = state.SelectedDrivers.Contains(x.Key),
-                    LineSmoothness = 0,
-                    // Add the drivers name next to the final data point, as a series label
-                    DataLabelsFormatter = p =>
-                        p.Index == x.Value.Count - 1 ? driver.Tla! : string.Empty,
-                    DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Right,
-                    DataLabelsSize = 16,
-                    DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour)),
-                    DataPadding = new LiveChartsCore.Drawing.LvcPoint(1, 0),
-                };
-            })
-            .ToArray();
+                        Name = x.Key,
+                        Fill = new SolidColorPaint(SKColors.Transparent),
+                        GeometryStroke = null,
+                        GeometryFill = null,
+                        Stroke = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
+                        {
+                            StrokeThickness = 2,
+                        },
+                        IsVisible = state.SelectedDrivers.Contains(x.Key),
+                        LineSmoothness = 0,
+                        // Add the drivers name next to the final data point, as a series label
+                        DataLabelsFormatter = p =>
+                            p.Index == x.Value.Count - 1 ? driver.Tla! : string.Empty,
+                        DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Right,
+                        DataLabelsSize = 16,
+                        DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour)),
+                        DataPadding = new LiveChartsCore.Drawing.LvcPoint(1, 0),
+                    };
+                })
+                .ToArray();
+
+            var gapChart = CreateChart(
+                gapSeries,
+                "Gap to Leader (s)",
+                heightPixels / 2,
+                widthPixels,
+                labeler: Labelers.Default,
+                axisMin: 0
+            );
+            gapChart.DrawOnCanvas(canvas);
+        }
 
         var lapSeries = lapSeriesData
             .Select(x =>
@@ -329,27 +339,17 @@ public class TimingHistoryDisplay(
             })
             .ToArray();
 
-        var gapChart = CreateChart(
-            gapSeries,
-            "Gap to Leader (s)",
-            heightPixels / 2,
-            widthPixels,
-            labeler: Labelers.Default,
-            axisMin: 0
-        );
-        gapChart.DrawOnCanvas(canvas);
-
         var lapChart = CreateChart(
             lapSeries,
             "Lap Time",
-            heightPixels / 2,
+            isRace ? heightPixels / 2 : heightPixels,
             widthPixels,
             labeler: v => TimeSpan.FromMilliseconds(v).ToString("mm':'ss"),
-            axisMax: fastestLap.TotalMilliseconds * 1.05,
+            axisMax: isRace ? fastestLap.TotalMilliseconds * 1.05 : null,
             yMinStep: 1000
         );
         var lapChartImage = lapChart.GetImage();
-        canvas.DrawImage(lapChartImage, new SKPoint(0, heightPixels / 2));
+        canvas.DrawImage(lapChartImage, new SKPoint(0, isRace ? heightPixels / 2 : 0));
 
         if (options.Value.Verbose)
         {
