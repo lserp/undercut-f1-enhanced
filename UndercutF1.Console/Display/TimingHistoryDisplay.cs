@@ -226,11 +226,14 @@ public class TimingHistoryDisplay(
                 .Where(x => x.Key >= minLap && x.Key <= maxLap)
         )
         {
-            // Discard laps slower than 105% of the fastest car on that lap
-            // This should discard laps where cars pit, as those laps aren't very useful
             fastestLap =
                 lines.Min(x => x.Value.LastLapTime?.ToTimeSpan()) ?? TimeSpan.FromMinutes(2);
-            var threshold = fastestLap * 1.05;
+
+            // In a race session Discard laps slower than 105% of the fastest car on that lap
+            // This should discard laps where cars pit, as those laps aren't very useful
+            // In non-race sessions, we want to see slow laps (e.g. cooldown or race-sim)
+            // so use a arbitrary +1min threshold instead of 105%.
+            var threshold = isRace ? fastestLap * 1.05 : fastestLap + TimeSpan.FromMinutes(1);
             foreach (var (driver, timingData) in lines)
             {
                 // Lapped cars don't have a gap to leader, so null them out
@@ -252,7 +255,7 @@ public class TimingHistoryDisplay(
                 // Use the threshold to null out laps that are too slow
                 // (attempting to avoid in and out laps from skewing the chart)
                 if (
-                    (isRace && lapTime > threshold)
+                    lapTime > threshold
                     || timingData.InPit.GetValueOrDefault()
                     || timingData.PitOut.GetValueOrDefault()
                 )
