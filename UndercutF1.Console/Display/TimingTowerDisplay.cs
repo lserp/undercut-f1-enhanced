@@ -190,6 +190,7 @@ public class TimingTowerDisplay(
                 new TableColumn("BL S1") { Width = 15, Alignment = Justify.Left },
                 new TableColumn("BL S2") { Width = 15, Alignment = Justify.Left },
                 new TableColumn("BL S3") { Width = 15, Alignment = Justify.Left },
+                new TableColumn("Last Lap") { Width = 9, Alignment = Justify.Left },
                 new TableColumn("S1") { Alignment = Justify.Left },
                 new TableColumn("S2") { Alignment = Justify.Left },
                 new TableColumn("S3") { Alignment = Justify.Left },
@@ -262,6 +263,7 @@ public class TimingTowerDisplay(
                     overrideStyle: true,
                     showDifference: true
                 ),
+                new Text(line.LastLapTime?.Value ?? "", GetStyle(line.LastLapTime)),
                 GetSectorMarkup(line.Sectors.GetValueOrDefault("0")),
                 GetSectorMarkup(line.Sectors.GetValueOrDefault("1")),
                 GetSectorMarkup(line.Sectors.GetValueOrDefault("2")),
