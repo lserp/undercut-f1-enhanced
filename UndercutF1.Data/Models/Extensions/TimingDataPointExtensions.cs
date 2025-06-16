@@ -42,13 +42,43 @@ public static class TimingDataPointExtensions
             out result
         );
 
+    public static decimal? SmartGapToLeaderSeconds(
+        this Dictionary<string, TimingDataPoint.Driver> lines,
+        string driverNumber
+    )
+    {
+        var line = lines.GetValueOrDefault(driverNumber);
+        if (line is null)
+        {
+            return null;
+        }
+
+        // If this driver is not lapped, and has a valid gap to leader, then use it directly
+        if (
+            line.GapToLeader is not null
+            && !line.GapToLeader.Contains(" L", StringComparison.InvariantCultureIgnoreCase)
+        )
+        {
+            return line.GapToLeaderSeconds();
+        }
+
+        // If the driver is lapped, they won't have a GapToLeader,
+        // so determine it manually by adding up all the intervals from higher placed drivers
+        if (string.IsNullOrWhiteSpace(line.IntervalToPositionAhead?.Value))
+        {
+            return null;
+        }
+
+        var summedGapsOfPriorDrivers = lines
+            .Where(x => x.Value.Line <= line.Line)
+            .Sum(x => x.Value.IntervalToPositionAhead?.IntervalSeconds() ?? 0);
+
+        return summedGapsOfPriorDrivers;
+    }
+
     public static TimeSpan? ToTimeSpan(this TimingDataPoint.Driver.BestLap lap) =>
         lap.Value.TryParseTimeSpan(out var result) ? result : null;
 
     public static TimeSpan? ToTimeSpan(this TimingDataPoint.Driver.LapSectorTime lap) =>
         lap.Value.TryParseTimeSpan(out var result) ? result : null;
-
-    public static bool IsRace(this SessionInfoDataPoint? sessionInfo) =>
-        (sessionInfo?.Name?.EndsWith("Race") ?? true)
-        || (sessionInfo?.Name?.EndsWith("Sprint") ?? true);
 }
