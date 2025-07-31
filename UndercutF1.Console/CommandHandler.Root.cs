@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.OpenApi.Models;
+using UndercutF1.Console.Api;
 using UndercutF1.Console.Audio;
 using UndercutF1.Console.Graphics;
 using UndercutF1.Data;
@@ -53,6 +53,7 @@ public static partial class CommandHandler
                 {
                     c.CustomSchemaIds(type =>
                         type.FullName!.Replace("UndercutF1.Data.", string.Empty)
+                            .Replace("UndercutF1.Console.Api.", string.Empty)
                             .Replace("+", string.Empty)
                     );
                     c.SwaggerDoc(
@@ -62,10 +63,17 @@ public static partial class CommandHandler
                 });
         }
 
-        builder.Services.Configure<JsonOptions>(x =>
+        builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(x =>
         {
             x.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             x.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        });
+
+        // The Swagger UI only respects the Mvc JsonOptions, so set both even though we only need the Http.Json one for minimal APIs
+        builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(x =>
+        {
+            x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            x.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         });
 
         var app = builder.Build();
@@ -76,7 +84,7 @@ public static partial class CommandHandler
 
             app.MapSwagger();
 
-            app.MapTimingEndpoints();
+            app.MapControlEndpoints().MapTimingEndpoints();
         }
 
         app.Logger.LogDebug("Options: {Options}", options);
@@ -90,7 +98,7 @@ public static partial class CommandHandler
                         app.Logger.LogError("Whisper: {Message}", msg?.Trim('\n'));
                         break;
                     case Whisper.net.Logger.WhisperLogLevel.Warning:
-                        app.Logger.LogWarning("Whisper: {Message}", msg?.Trim('\n'));
+                        app.Logger.LogDebug("Whisper: {Message}", msg?.Trim('\n'));
                         break;
                     case Whisper.net.Logger.WhisperLogLevel.Debug:
                         app.Logger.LogDebug("Whisper: {Message}", msg?.Trim('\n'));
