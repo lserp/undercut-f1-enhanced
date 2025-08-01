@@ -6,7 +6,7 @@ namespace UndercutF1.Console;
 
 public static partial class CommandHandler
 {
-    public static async Task OutputImage(FileInfo file, GraphicsProtocol protocol, bool isVerbose)
+    public static async Task OutputImage(FileInfo file, GraphicsProtocol protocol, bool? isVerbose)
     {
         var builder = GetBuilder(isVerbose: isVerbose);
 
