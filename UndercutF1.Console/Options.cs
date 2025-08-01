@@ -17,4 +17,7 @@ public sealed record Options : LiveTimingOptions
     /// Otherwise, heuristics and queries will be used to determine if graphics are supported, and which protocol to use.
     /// </summary>
     public GraphicsProtocol? ForceGraphicsProtocol { get; set; } = null;
+
+    /// <inheritdoc cref="ExternalPlayerSync.Options" />
+    public ExternalPlayerSync.Options? ExternalPlayerSync { get; set; }
 }

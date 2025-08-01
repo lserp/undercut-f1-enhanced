@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.OpenApi.Models;
 using UndercutF1.Console.Api;
 using UndercutF1.Console.Audio;
+using UndercutF1.Console.ExternalPlayerSync;
 using UndercutF1.Console.Graphics;
 using UndercutF1.Data;
 
@@ -38,7 +39,9 @@ public static partial class CommandHandler
             .AddSingleton<INotifyHandler, NotifyHandler>()
             .AddSingleton<TerminalInfoProvider>()
             .AddSingleton<AudioPlayer>()
-            .AddHostedService(sp => sp.GetRequiredService<ConsoleLoop>());
+            .AddSingleton<WebSocketSynchroniser>()
+            .AddHostedService(sp => sp.GetRequiredService<ConsoleLoop>())
+            .AddHostedService(sp => sp.GetRequiredService<WebSocketSynchroniser>());
 
         var options = builder.Configuration.Get<Options>() ?? new();
 
