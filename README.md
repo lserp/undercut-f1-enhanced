@@ -58,6 +58,9 @@ Feature Highlights:
 - [Logging](#logging)
 - [Alternate Key Binds](#alternate-key-binds)
 - [Data Recording and Replay](#data-recording-and-replay)
+- [API](#api)
+  - [Control API](#control-api)
+  - [Data API](#data-api)
 - [Notice](#notice)
 
 ## Inspiration
@@ -343,6 +346,27 @@ All events received by the live timing client will be written to the configured 
 - `live.txt` contains an append-log of every message received in the stream
 
 Both of these files are required for future simulations/replays. The `IJsonTimingClient` supports loading these files and processing them in the same way live data would be. Data points will be replayed in real time, using an adjustable delay.
+
+## API
+
+undercut-f1 ships with a simple HTTP API which allows for local integrations with your timing screen/data. [see Configuration for details on how to enable the API](#configuration). Once enabled, visit [the Swagger UI page at http://localhost:61937/swagger/index.html](http://localhost:61937/swagger/index.html) to see what APIs are available. This is an easy place to test the API and see what kind of data you get, and also the schema.
+
+### Control API
+
+The Control API `POST http://localhost:61937/control` allows you to issue control commands to the currently running session to, for example, pause the session clock.
+
+```sh
+# Pause the session clock
+curl -H "content-type:application/json" -X POST http://localhost:61937/control -d '{"operation": "PauseClock"}'
+# Resume the session clock
+curl -H "content-type:application/json" -X POST http://localhost:61937/control -d '{"operation": "ResumeClock"}'
+# Toggle (Play/Pause) the session clock
+curl -H "content-type:application/json" -X POST http://localhost:61937/control -d '{"operation": "ToggleClock"}'
+```
+
+### Data API
+
+The Data API `POST http://localhost:61938/data/<data-type>/latest` allow you to fetch the current raw timing data state. Take a look at the Swagger schema, and the [source model files](./UndercutF1.Data/Models/TimingDataPoints/) to understand more about what data is available for each timing `data-type`.
 
 ## Notice
 

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using UndercutF1.Data;
 
-namespace UndercutF1.Console;
+namespace UndercutF1.Console.Api;
 
 public static class TimingEndpoints
 {
@@ -19,22 +19,24 @@ public static class TimingEndpoints
             .MapLatestDataEndpoint<WeatherProcessor, WeatherDataPoint>();
 
         app.MapGet(
-            "/data/TimingData/laps/{lapNumber}",
-            ([FromRoute] int lapNumber, TimingDataProcessor processor) =>
-            {
-                return processor.DriversByLap.TryGetValue(lapNumber, out var data)
-                    ? TypedResults.Ok(data)
-                    : Results.NotFound();
-            }
-        );
+                "/data/TimingData/laps/{lapNumber}",
+                ([FromRoute] int lapNumber, TimingDataProcessor processor) =>
+                {
+                    return processor.DriversByLap.TryGetValue(lapNumber, out var data)
+                        ? TypedResults.Ok(data)
+                        : Results.NotFound();
+                }
+            )
+            .WithTags("Timing Data");
 
         app.MapGet(
-            "/data/TimingData/laps/best",
-            (TimingDataProcessor processor) =>
-            {
-                return TypedResults.Ok(processor.BestLaps);
-            }
-        );
+                "/data/TimingData/laps/best",
+                (TimingDataProcessor processor) =>
+                {
+                    return TypedResults.Ok(processor.BestLaps);
+                }
+            )
+            .WithTags("Timing Data");
 
         return app;
     }
@@ -45,12 +47,13 @@ public static class TimingEndpoints
     {
         var dataPoint = new T();
         app.MapGet(
-            $"/data/{dataPoint.LiveTimingDataType}/latest",
-            (TProcessor processor) =>
-            {
-                return TypedResults.Ok(processor.Latest);
-            }
-        );
+                $"/data/{dataPoint.LiveTimingDataType}/latest",
+                (TProcessor processor) =>
+                {
+                    return TypedResults.Ok(processor.Latest);
+                }
+            )
+            .WithTags("Timing Data");
         return app;
     }
 }
