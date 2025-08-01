@@ -32,7 +32,7 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
-    <PackageReference Include="system.commandline" />
+    <PackageReference Include="System.CommandLine" />
     <PackageReference Include="TextCopy" />
     <PackageReference Include="Vezel.Cathode" />
     <PackageReference Include="Vezel.Cathode.Extensions" />

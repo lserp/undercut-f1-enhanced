@@ -10,10 +10,10 @@ namespace UndercutF1.Console;
 public static partial class CommandHandler
 {
     private static WebApplicationBuilder GetBuilder(
-        bool isApiEnabled = false,
+        bool? isApiEnabled = false,
         DirectoryInfo? dataDirectory = null,
         DirectoryInfo? logDirectory = null,
-        bool isVerbose = false,
+        bool? isVerbose = false,
         bool? notifyEnabled = null,
         bool? preferFfmpeg = null,
         GraphicsProtocol? forceGraphicsProtocol = null,
@@ -23,11 +23,11 @@ public static partial class CommandHandler
         var builder = WebApplication.CreateEmptyBuilder(new() { ApplicationName = "undercutf1" });
 
         var commandLineOpts = new Dictionary<string, string?>();
-        if (isVerbose)
+        if (isVerbose is not null)
         {
             commandLineOpts.Add(nameof(Options.Verbose), isVerbose.ToString());
         }
-        if (isApiEnabled)
+        if (isApiEnabled is not null)
         {
             commandLineOpts.Add(nameof(Options.ApiEnabled), isApiEnabled.ToString());
         }

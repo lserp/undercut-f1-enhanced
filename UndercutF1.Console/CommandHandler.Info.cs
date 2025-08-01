@@ -9,7 +9,9 @@ public static partial class CommandHandler
     public static async Task GetInfo(
         DirectoryInfo? dataDirectory,
         DirectoryInfo? logDirectory,
-        bool isVerbose,
+        bool? isVerbose,
+        bool? notifyEnabled,
+        bool? preferFfmpeg,
         GraphicsProtocol? forceGraphicsProtocol
     )
     {
@@ -17,6 +19,8 @@ public static partial class CommandHandler
             dataDirectory: dataDirectory,
             logDirectory: logDirectory,
             isVerbose: isVerbose,
+            notifyEnabled: notifyEnabled,
+            preferFfmpeg: preferFfmpeg,
             forceGraphicsProtocol: forceGraphicsProtocol
         );
 

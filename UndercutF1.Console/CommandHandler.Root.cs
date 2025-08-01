@@ -11,10 +11,10 @@ namespace UndercutF1.Console;
 public static partial class CommandHandler
 {
     public static async Task Root(
-        bool isApiEnabled,
+        bool? isApiEnabled,
         DirectoryInfo? dataDirectory,
         DirectoryInfo? logDirectory,
-        bool isVerbose,
+        bool? isVerbose,
         bool? notifyEnabled,
         bool? preferFfmpeg,
         GraphicsProtocol? forceGraphicsProtocol

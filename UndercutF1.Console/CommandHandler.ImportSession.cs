@@ -11,7 +11,7 @@ public static partial class CommandHandler
         int? sessionKey,
         DirectoryInfo? dataDirectory,
         DirectoryInfo? logDirectory,
-        bool isVerbose
+        bool? isVerbose
     )
     {
         var builder = GetBuilder(
