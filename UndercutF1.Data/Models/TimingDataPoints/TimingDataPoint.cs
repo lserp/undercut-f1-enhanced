@@ -24,6 +24,14 @@ public sealed record TimingDataPoint : ILiveTimingDataPoint
         public bool? PitOut { get; set; }
         public int? NumberOfPitStops { get; set; }
 
+        /// <summary>
+        /// A custom property where we track if the current lap had <see cref="InPit"/> or <see cref="PitOut"/>
+        /// set at any time.
+        ///
+        /// The intention of the property is to allow for easy filtering of non-flying laps from lap-by-lap data.
+        /// </summary>
+        public bool? IsPitLap { get; set; }
+
         public int? NumberOfLaps { get; set; }
         public LapSectorTime? LastLapTime { get; set; }
 
@@ -88,6 +96,7 @@ public sealed record TimingDataPoint : ILiveTimingDataPoint
         {
             PersonalBest = 1,
             OverallBest = 2,
+
             /// <summary>
             /// Went through this mini sector in the pit lane
             /// </summary>

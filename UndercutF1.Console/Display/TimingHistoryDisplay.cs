@@ -229,11 +229,9 @@ public class TimingHistoryDisplay(
             fastestLap =
                 lines.Min(x => x.Value.LastLapTime?.ToTimeSpan()) ?? TimeSpan.FromMinutes(2);
 
-            // In a race session discard laps slower than 105% of the fastest car on that lap
-            // This should discard laps where cars entered or left the pits, as those lap times aren't very useful
-            // In non-race sessions, we want to see slow laps (e.g. cooldown or race-sim)
-            // so use a arbitrary +1min threshold instead of 105%.
-            var threshold = isRace ? fastestLap * 1.05 : fastestLap + TimeSpan.FromMinutes(1);
+            // Use an arbitrary threshold of the current laps fatest lap + 30sec to discard slow laps
+            // which would distort the chart. 30secs should be enought o show race and quali pace on the same chart.
+            var threshold = fastestLap + TimeSpan.FromSeconds(30);
             foreach (var (driver, timingData) in lines)
             {
                 // Lapped cars don't have a gap to leader, so use the smart calc to determine the real gap
@@ -251,11 +249,7 @@ public class TimingHistoryDisplay(
                 var lapTime = timingData.LastLapTime?.ToTimeSpan();
                 // Use the threshold to null out laps that are too slow
                 // (attempting to avoid in and out laps from skewing the chart)
-                if (
-                    lapTime > threshold
-                    || timingData.InPit.GetValueOrDefault()
-                    || timingData.PitOut.GetValueOrDefault()
-                )
+                if (lapTime > threshold || timingData.IsPitLap.GetValueOrDefault())
                 {
                     lapSeriesData[driver].Add(new(lap, null));
                 }
@@ -317,7 +311,12 @@ public class TimingHistoryDisplay(
                 {
                     Name = x.Key,
                     Fill = new SolidColorPaint(SKColors.Transparent) { IsAntialias = false },
-                    GeometryStroke = null,
+                    GeometrySize = 4,
+                    GeometryStroke = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
+                    {
+                        IsAntialias = false,
+                        StrokeThickness = 2,
+                    },
                     GeometryFill = null,
                     Stroke = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
                     {
@@ -326,8 +325,11 @@ public class TimingHistoryDisplay(
                     },
                     IsVisible = state.SelectedDrivers.Contains(x.Key),
                     LineSmoothness = 0,
+                    // Add the drivers name next to the final data point, as a series label
                     DataLabelsFormatter = p =>
-                        p.Index == x.Value.Count - 1 ? driver.Tla! : string.Empty,
+                        p.Index == x.Value.Count - 1 || x.Value[p.Index + 1].Y == null
+                            ? driver.Tla!
+                            : string.Empty,
                     DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Right,
                     DataLabelsSize = 16,
                     DataLabelsPaint = new SolidColorPaint(SKColor.Parse(driver.TeamColour))
@@ -345,7 +347,6 @@ public class TimingHistoryDisplay(
             isRace ? heightPixels / 2 : heightPixels,
             widthPixels,
             labeler: v => TimeSpan.FromMilliseconds(v).ToString("mm':'ss"),
-            axisMax: isRace ? fastestLap.TotalMilliseconds * 1.05 : null,
             yMinStep: 1000
         );
         var lapChartImage = lapChart.GetImage();
