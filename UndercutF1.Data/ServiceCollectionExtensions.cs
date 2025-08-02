@@ -31,17 +31,31 @@ public static partial class ServiceCollectionExtensions
             .AddLiveTimingProcessors()
             .AddSingleton<INotifyService, NotifyService>()
             .AddSingleton<ITranscriptionProvider, TranscriptionProvider>()
-            .AddSingleton<IDataImporter, DataImporter>()
-            .AddHttpClient(
-                "Default",
-                options =>
-                {
-                    options.DefaultRequestHeaders.Add(
-                        "User-Agent",
-                        $"undercut-f1/{ThisAssembly.AssemblyInformationalVersion}"
-                    );
-                }
-            );
+            .AddSingleton<IDataImporter, DataImporter>();
+
+        collection.AddHttpClient(
+            "Default",
+            options =>
+            {
+                options.DefaultRequestHeaders.Add(
+                    "User-Agent",
+                    $"undercut-f1/{ThisAssembly.AssemblyInformationalVersion}"
+                );
+            }
+        );
+
+        collection.AddHttpClient(
+            "Proxy",
+            options =>
+            {
+                options.DefaultRequestHeaders.Add(
+                    "User-Agent",
+                    $"undercut-f1/{ThisAssembly.AssemblyInformationalVersion}"
+                );
+                options.DefaultRequestHeaders.ConnectionClose = true;
+                options.BaseAddress = new Uri("https://undercutf1.amandhoot.com");
+            }
+        );
 
         return collection;
     }

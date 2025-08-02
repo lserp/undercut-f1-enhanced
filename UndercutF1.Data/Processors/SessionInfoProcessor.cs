@@ -42,9 +42,8 @@ public class SessionInfoProcessor(
         try
         {
             logger.LogInformation("Loading circuit data for key {CircuitKey}", circuitKey);
-            var httpClient = httpClientFactory.CreateClient("Default");
-            var url =
-                $"https://api.multiviewer.app/api/v1/circuits/{circuitKey}/{DateTimeOffset.UtcNow.Year}";
+            var httpClient = httpClientFactory.CreateClient("Proxy");
+            var url = $"/api/v1/circuits/{circuitKey}/{DateTimeOffset.UtcNow.Year}";
             var circuitInfo = await httpClient
                 .GetFromJsonAsync<CircuitInfoResponse>(url, _jsonSerializerOptions)
                 .ConfigureAwait(false);
