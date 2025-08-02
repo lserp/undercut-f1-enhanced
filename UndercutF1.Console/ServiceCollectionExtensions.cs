@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
             _ = services.AddSingleton(typeof(IDisplay), sp => sp.GetRequiredService(type));
         }
 
+        services.AddSingleton<CommonDisplayComponents>();
         services.AddSingleton<LogDisplayOptions>();
         services.AddSingleton<StartSimulatedSessionOptions>();
 
