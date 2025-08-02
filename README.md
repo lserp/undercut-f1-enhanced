@@ -24,6 +24,7 @@ Feature Highlights:
 - [Race Control](#race-control-page) messages including investigations, penalties, lap deletions, and weather
 - [Driver Tracker](#driver-tracker) shows the position of selected drivers on a live track map
 - Lap-by-lap [Timing History](#using-a-cursor-to-view-timing-history-by-lap) to observe gaps over time
+- [Pause the session clock](#external-session-clock-sync) when you pause external video players (such as Kodi), so that your timing screen remains in sync with your feed.
 
 <!-- omit in toc -->
 ## Table of Contents
@@ -61,6 +62,7 @@ Feature Highlights:
 - [API](#api)
   - [Control API](#control-api)
   - [Data API](#data-api)
+- [External Session Clock Sync](#external-session-clock-sync)
 - [Notice](#notice)
 
 ## Inspiration
@@ -294,15 +296,19 @@ UndercutF1 can be configured using either a simple `config.json` file, through t
 
 To view what configuration is currently being used, open the <kbd>I</kbd> `Info` screen when the app starts up.
 
-| JSON Path               | Command Line                | Environment Variable               | Description                                                                                                                                                                               |
-| ----------------------- | --------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `dataDirectory`         | `--data-directory`          | `UNDERCUTF1_DATADIRECTORY`         | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription.                 |
-| `logDirectory`          | `--log-directory`           | `UNDERCUTF1_LOGDIRECTORY`          | The directory to which logs are written to.                                                                                                                                               |
-| `verbose`               | `-v\|--verbose`             | `UNDERCUTF1_VERBOSE`               | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                                   |
-| `apiEnabled`            | `--with-api`                | `UNDERCUTF1_APIENABLED`            | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                                            |
-| `notify`                | `--notify`                  | `UNDERCUTF1_NOTIFY`                | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                                        |
-| `preferFfmpegPlayback`  | `--prefer-ffmpeg`           | `UNDERCUTF1_PREFERFFMPEGPLAYBACK`  | Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123 respectively. `ffplay` is always used on Windows. Default: `false`. Values: `true` or `false`. |
-| `forceGraphicsProtocol` | `--force-graphics-protocol` | `UNDERCUTF1_FORCEGRAPHICSPROTOCOL` | Forces the usage of a particular graphics protocol instead of using heuristics to find a supported one. Values: `Kitty`, `Sixel`, or `iTerm`.                                             |
+| JSON Path                                     | Command Line                | Environment Variable                                      | Description                                                                                                                                                                               |
+| --------------------------------------------- | --------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dataDirectory`                               | `--data-directory`          | `UNDERCUTF1_DATADIRECTORY`                                | The directory to which JSON timing data is read or written from. This directory is also where Whisper models will be stored (if downloaded) for team radio transcription.                 |
+| `logDirectory`                                | `--log-directory`           | `UNDERCUTF1_LOGDIRECTORY`                                 | The directory to which logs are written to.                                                                                                                                               |
+| `verbose`                                     | `-v\|--verbose`             | `UNDERCUTF1_VERBOSE`                                      | Whether verbose logging should be enabled. Default: `false`. Values: `true` or `false`.                                                                                                   |
+| `apiEnabled`                                  | `--with-api`                | `UNDERCUTF1_APIENABLED`                                   | Whether the app should expose an API at <http://localhost:61937>. Default: `false`. Values: `true` or `false`.                                                                            |
+| `notify`                                      | `--notify`                  | `UNDERCUTF1_NOTIFY`                                       | Whether the app should sent audible BELs to your terminal when new race control messages are received. Default: `true`. Values: `true` or `false`.                                        |
+| `preferFfmpegPlayback`                        | `--prefer-ffmpeg`           | `UNDERCUTF1_PREFERFFMPEGPLAYBACK`                         | Prefer the usage of `ffplay` for playing Team Radio on Mac/Linux, instead of afplay/mpg123 respectively. `ffplay` is always used on Windows. Default: `false`. Values: `true` or `false`. |
+| `forceGraphicsProtocol`                       | `--force-graphics-protocol` | `UNDERCUTF1_FORCEGRAPHICSPROTOCOL`                        | Forces the usage of a particular graphics protocol instead of using heuristics to find a supported one. Values: `Kitty`, `Sixel`, or `iTerm`.                                             |
+| `externalPlayerSync.enabled`                  | N/A                         | `UNDERCUTF1_EXTERNALPLAYERSYNC__ENABLED`                  | Whether synchronisation of the session clock is enabled. Default: `false`. Values: `true` or `false`.                                                                                     |
+| `externalPlayerSync.url`                      | N/A                         | `UNDERCUTF1_EXTERNALPLAYERSYNC__URL`                      | The URL to use when connecting to the external services websocket. For Kodi, this will be something like `ws://localhost:9090/jsonrpc`.                                                   |
+| `externalPlayerSync.serviceType`              | N/A                         | `UNDERCUTF1_EXTERNALPLAYERSYNC__SERVICETYPE`              | What type of service is behind the provided URL to synchronise with. Values: `Kodi`.                                                                                                      |
+| `externalPlayerSync.webSocketConnectInterval` | N/A                         | `UNDERCUTF1_EXTERNALPLAYERSYNC__WEBSOCKETCONNECTINTERVAL` | If the websocket connection fails or ends, how long to wait before trying again (in ms). Default: `30000`.                                                                                |
 
 ### Default Directories
 
@@ -367,6 +373,20 @@ curl -H "content-type:application/json" -X POST http://localhost:61937/control -
 ### Data API
 
 The Data API `POST http://localhost:61938/data/<data-type>/latest` allow you to fetch the current raw timing data state. Take a look at the Swagger schema, and the [source model files](./UndercutF1.Data/Models/TimingDataPoints/) to understand more about what data is available for each timing `data-type`.
+
+## External Session Clock Sync
+
+If you watch F1 using an app like Kodi, you can choose to connect undercut-f1 to the Kodi API so that the undercut-f1's session clock automatically pauses when you pause the Kodi feed.
+This allows you to keep your timing screen synchronised with your video feed.
+
+See [Configuration](#configuration) for how to configure the `externalPlayerSync` options to enable this functionality.
+Once configured, you can use the `Info` view in undercut-f1 to confirm its correct, and see if the WebSocket successfully connected.
+[Logs](#logging) are also output with information or any errors related to this functionality.
+
+> [!NOTE]
+> Currently this functionality is only supported for Kodi over its [WebSocket JSON RPC API](https://kodi.wiki/view/JSON-RPC_API#WebSocket).
+> If you use a different video player, please raise a GitHub issue and we may be able to implement support!
+> You can also make your own integrations with our [Control API](#control-api).
 
 ## Notice
 

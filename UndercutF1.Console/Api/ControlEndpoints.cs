@@ -12,10 +12,12 @@ public enum ControlOperation
 
 public sealed record ControlRequest(ControlOperation operation);
 
+public sealed record ControlResponse(bool ClockPaused, bool SessionRunning, string? SessionName);
+
 public enum ControlErrorCode
 {
     NoRunningSession,
-    UnknwonOperation,
+    UnknownOperation,
 };
 
 public sealed record ControlError(ControlErrorCode errorCode)
@@ -24,7 +26,7 @@ public sealed record ControlError(ControlErrorCode errorCode)
         errorCode switch
         {
             ControlErrorCode.NoRunningSession => "No session is currently running",
-            ControlErrorCode.UnknwonOperation => "Unknown operation requested",
+            ControlErrorCode.UnknownOperation => "Unknown operation requested",
             _ => "Unknwon error",
         };
 }
@@ -33,15 +35,34 @@ public static class ControlEndpoints
 {
     public static WebApplication MapControlEndpoints(this WebApplication app)
     {
+        app.MapGet("/control", GetControlState)
+            .WithDescription("Fetches the current state of the timing client")
+            .WithTags("Control")
+            .Produces<ControlResponse>(StatusCodes.Status200OK);
+
         app.MapPost("/control", ControlApiEndpoint)
             .WithDescription(
                 "Issues control commands to the currently running session. These commands allow you to, for example, start or stop the session clock to synchronize your timing screen with another service"
             )
             .WithTags("Control")
-            .Produces(StatusCodes.Status200OK)
+            .Produces<ControlResponse>(StatusCodes.Status200OK)
             .Produces<ControlError>(StatusCodes.Status400BadRequest);
 
         return app;
+    }
+
+    public static IResult GetControlState(
+        SessionInfoProcessor sessionInfo,
+        IDateTimeProvider dateTimeProvider
+    )
+    {
+        var res = new ControlResponse(
+            dateTimeProvider.IsPaused,
+            sessionInfo.Latest.Name is not null,
+            sessionInfo.Latest.Name
+        );
+
+        return Results.Ok(res);
     }
 
     public static IResult ControlApiEndpoint(
@@ -57,7 +78,7 @@ public static class ControlEndpoints
 
         if (!Enum.IsDefined(request.operation))
         {
-            return Results.BadRequest(new ControlError(ControlErrorCode.UnknwonOperation));
+            return Results.BadRequest(new ControlError(ControlErrorCode.UnknownOperation));
         }
 
         switch (request.operation)
@@ -73,6 +94,6 @@ public static class ControlEndpoints
                 break;
         }
 
-        return Results.Ok();
+        return GetControlState(sessionInfo, dateTimeProvider);
     }
 }

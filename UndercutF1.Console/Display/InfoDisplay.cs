@@ -2,11 +2,15 @@ using System.Runtime.InteropServices;
 using Microsoft.Extensions.Options;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using UndercutF1.Console.ExternalPlayerSync;
 
 namespace UndercutF1.Console;
 
-public sealed class InfoDisplay(TerminalInfoProvider terminalInfo, IOptions<Options> options)
-    : IDisplay
+public sealed class InfoDisplay(
+    TerminalInfoProvider terminalInfo,
+    WebSocketSynchroniser synchroniser,
+    IOptions<Options> options
+) : IDisplay
 {
     public Screen Screen => Screen.Info;
 
@@ -35,6 +39,13 @@ public sealed class InfoDisplay(TerminalInfoProvider terminalInfo, IOptions<Opti
             [bold]Runtime Identifier:[/]  {RuntimeInformation.RuntimeIdentifier}
             
             [bold]OS:[/] {RuntimeInformation.OSDescription}
+
+            [bold]External Service Sync[/]
+            [bold]Service Status:[/]      {synchroniser.State} / {synchroniser.ExecuteTask?.Status}
+            [bold]Enabled:[/]             {options.Value.ExternalPlayerSync?.Enabled ?? false}
+            [bold]Service Type:[/]        {options.Value.ExternalPlayerSync?.ServiceType}
+            [bold]Url:[/]                 {options.Value.ExternalPlayerSync?.Url}
+            [bold]Connect Interval:[/]    {options.Value.ExternalPlayerSync?.WebSocketConnectInterval}
             """;
 
         return Task.FromResult<IRenderable>(new Panel(new Markup(content)).Expand());
