@@ -6,14 +6,12 @@ namespace UndercutF1.Console;
 
 public class TyreStintDisplay(
     State state,
+    CommonDisplayComponents common,
     TyreStintSeriesProcessor tyreStintSeries,
     PitStopSeriesProcessor pitStopSeries,
     DriverListProcessor driverList,
     TimingDataProcessor timingData,
-    LapCountProcessor lapCount,
-    TrackStatusProcessor trackStatus,
-    ExtrapolatedClockProcessor extrapolatedClock,
-    IDateTimeProvider dateTimeProvider
+    LapCountProcessor lapCount
 ) : IDisplay
 {
     public Screen Screen => Screen.TyreStints;
@@ -26,7 +24,7 @@ public class TyreStintDisplay(
             new Layout("Pit Stints", pitStintList),
             new Layout("Footer")
                 .SplitColumns(
-                    new Layout("Status Panel", GetStatusPanel()).Size(15),
+                    new Layout("Status Panel", common.GetStatusPanel()).Size(15),
                     new Layout("Selected Stint Detail", GetStintDetail())
                 )
                 .Size(6)
@@ -137,35 +135,5 @@ public class TyreStintDisplay(
             columns.Add(new Rows(rows).Collapse());
         }
         return new Columns(columns).Collapse();
-    }
-
-    private Panel GetStatusPanel()
-    {
-        var items = new List<IRenderable>();
-
-        if (trackStatus.Latest is not null)
-        {
-            var style = trackStatus.Latest.Status switch
-            {
-                "1" => DisplayUtils.STYLE_PB, // All Clear
-                "2" => new Style(foreground: Color.Black, background: Color.Yellow), // Yellow Flag
-                "4" => new Style(foreground: Color.Black, background: Color.Yellow), // Safety Car
-                "6" => new Style(foreground: Color.Black, background: Color.Yellow), // VSC Deployed
-                "5" => new Style(foreground: Color.White, background: Color.Red), // Red Flag
-                _ => Style.Plain,
-            };
-            items.Add(new Text($"{trackStatus.Latest.Message}", style));
-        }
-
-        items.Add(new Text($@"{dateTimeProvider.Utc:HH\:mm\:ss}"));
-        items.Add(new Text($@"{extrapolatedClock.ExtrapolatedRemaining():hh\:mm\:ss}"));
-
-        var rows = new Rows(items);
-        return new Panel(rows)
-        {
-            Header = new PanelHeader("Status"),
-            Expand = true,
-            Border = BoxBorder.Rounded,
-        };
     }
 }

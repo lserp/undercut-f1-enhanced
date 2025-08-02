@@ -7,17 +7,15 @@ namespace UndercutF1.Console;
 
 public class TimingTowerDisplay(
     State state,
+    CommonDisplayComponents common,
     RaceControlMessageProcessor raceControlMessages,
     TimingDataProcessor timingData,
     TimingAppDataProcessor timingAppData,
     DriverListProcessor driverList,
-    TrackStatusProcessor trackStatusProcessor,
     LapCountProcessor lapCountProcessor,
     SessionInfoProcessor sessionInfoProcessor,
-    ExtrapolatedClockProcessor extrapolatedClock,
     PositionDataProcessor positionData,
-    CarDataProcessor carData,
-    IDateTimeProvider dateTimeProvider
+    CarDataProcessor carData
 ) : IDisplay
 {
     public Screen Screen => Screen.TimingTower;
@@ -26,7 +24,7 @@ public class TimingTowerDisplay(
 
     public Task<IRenderable> GetContentAsync()
     {
-        var statusPanel = GetStatusPanel();
+        var statusPanel = common.GetStatusPanel();
 
         var raceControlPanel =
             state.CursorOffset > 0 && sessionInfoProcessor.Latest.IsRace()
@@ -502,36 +500,5 @@ public class TimingTowerDisplay(
             ?.SmartGapToLeaderSeconds(nextDriverNumber);
 
         return nextGapToLeader - prevGapToLeader ?? 0;
-    }
-
-    private IRenderable GetStatusPanel()
-    {
-        var items = new List<IRenderable>();
-
-        if (trackStatusProcessor.Latest is not null)
-        {
-            var style = trackStatusProcessor.Latest.Status switch
-            {
-                "1" => DisplayUtils.STYLE_PB, // All Clear
-                "2" => new Style(foreground: Color.Black, background: Color.Yellow), // Yellow Flag
-                "4" => new Style(foreground: Color.Black, background: Color.Yellow), // Safety Car
-                "6" => new Style(foreground: Color.Black, background: Color.Yellow), // VSC Deployed
-                "7" => new Style(foreground: Color.Black, background: Color.Yellow), // VSC Ending
-                "5" => new Style(foreground: Color.White, background: Color.Red), // Red Flag
-                _ => Style.Plain,
-            };
-            items.Add(new Text($"{trackStatusProcessor.Latest.Message}", style));
-        }
-
-        items.Add(new Text($@"{dateTimeProvider.Utc:HH\:mm\:ss}"));
-        items.Add(new Text($@"{extrapolatedClock.ExtrapolatedRemaining():hh\:mm\:ss}"));
-
-        var rows = new Rows(items);
-        return new Panel(rows)
-        {
-            Header = new PanelHeader("Status"),
-            Expand = true,
-            Border = BoxBorder.Rounded,
-        };
     }
 }

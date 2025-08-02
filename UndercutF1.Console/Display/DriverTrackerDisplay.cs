@@ -52,14 +52,12 @@ public class DriverTrackerDisplay : IDisplay
     );
 
     private readonly State _state;
+    private readonly CommonDisplayComponents _common;
     private readonly TimingDataProcessor _timingData;
     private readonly DriverListProcessor _driverList;
     private readonly PositionDataProcessor _positionData;
     private readonly CarDataProcessor _carData;
     private readonly SessionInfoProcessor _sessionInfo;
-    private readonly TrackStatusProcessor _trackStatus;
-    private readonly ExtrapolatedClockProcessor _extrapolatedClock;
-    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly TerminalInfoProvider _terminalInfo;
     private readonly IOptions<Options> _options;
     private TransformFactors? _transform = null;
@@ -68,27 +66,23 @@ public class DriverTrackerDisplay : IDisplay
 
     public DriverTrackerDisplay(
         State state,
+        CommonDisplayComponents common,
         TimingDataProcessor timingData,
         DriverListProcessor driverList,
         PositionDataProcessor positionData,
         CarDataProcessor carData,
         SessionInfoProcessor sessionInfo,
-        TrackStatusProcessor trackStatus,
-        ExtrapolatedClockProcessor extrapolatedClock,
-        IDateTimeProvider dateTimeProvider,
         TerminalInfoProvider terminalInfo,
         IOptions<Options> options
     )
     {
         _state = state;
+        _common = common;
         _timingData = timingData;
         _driverList = driverList;
         _positionData = positionData;
         _carData = carData;
         _sessionInfo = sessionInfo;
-        _trackStatus = trackStatus;
-        _extrapolatedClock = extrapolatedClock;
-        _dateTimeProvider = dateTimeProvider;
         _terminalInfo = terminalInfo;
         _options = options;
 
@@ -119,7 +113,7 @@ public class DriverTrackerDisplay : IDisplay
                 """;
         }
         var driverTower = GetDriverTower();
-        var statusPanel = GetStatusPanel();
+        var statusPanel = _common.GetStatusPanel();
         var layout = new Layout("Content").SplitColumns(
             new Layout("Left Tower")
                 .SplitRows(
@@ -219,36 +213,6 @@ public class DriverTrackerDisplay : IDisplay
         }
 
         return table;
-    }
-
-    private Panel GetStatusPanel()
-    {
-        var items = new List<IRenderable>();
-
-        if (_trackStatus.Latest is not null)
-        {
-            var style = _trackStatus.Latest.Status switch
-            {
-                "1" => DisplayUtils.STYLE_PB, // All Clear
-                "2" => new Style(foreground: Color.Black, background: Color.Yellow), // Yellow Flag
-                "4" => new Style(foreground: Color.Black, background: Color.Yellow), // Safety Car
-                "6" => new Style(foreground: Color.Black, background: Color.Yellow), // VSC Deployed
-                "5" => new Style(foreground: Color.White, background: Color.Red), // Red Flag
-                _ => Style.Plain,
-            };
-            items.Add(new Text($"{_trackStatus.Latest.Message}", style));
-        }
-
-        items.Add(new Text($@"{_dateTimeProvider.Utc:HH\:mm\:ss}"));
-        items.Add(new Text($@"{_extrapolatedClock.ExtrapolatedRemaining():hh\:mm\:ss}"));
-
-        var rows = new Rows(items);
-        return new Panel(rows)
-        {
-            Header = new PanelHeader("Status"),
-            Expand = true,
-            Border = BoxBorder.Rounded,
-        };
     }
 
     private string[] GetTrackMap()
