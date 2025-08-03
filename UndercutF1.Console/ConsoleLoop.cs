@@ -238,13 +238,10 @@ public class ConsoleLoop(
             )
             {
                 var tasks = inputHandlers
-                    .Where(x =>
-                        x.IsEnabled
-                        && x.Keys.Contains(consoleKey)
-                        && (
-                            x.ApplicableScreens is null
-                            || x.ApplicableScreens.Contains(state.CurrentScreen)
-                        )
+                    .Where(handler =>
+                        handler.IsEnabled
+                        && handler.Keys.Contains(consoleKey)
+                        && handler.ApplicableScreens.Contains(state.CurrentScreen)
                     )
                     // Repeat the input handlers for duplicate key presses
                     .SelectMany(x => Enumerable.Range(0, times).Select(_ => x))

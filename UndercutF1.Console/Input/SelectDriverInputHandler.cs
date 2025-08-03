@@ -10,7 +10,7 @@ public sealed class SelectDriverInputHandler(
 {
     public bool IsEnabled => true;
 
-    public Screen[] ApplicableScreens => [Screen.DriverTracker];
+    public Screen[] ApplicableScreens => [Screen.DriverTracker, Screen.SelectDriver];
 
     public ConsoleKey[] Keys => [ConsoleKey.Enter];
 

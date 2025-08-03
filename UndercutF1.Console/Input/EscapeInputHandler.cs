@@ -33,8 +33,11 @@ public class EscapeInputHandler(State state) : IInputHandler
             Screen.Main => Screen.Shutdown,
             Screen.StartSimulatedSession => Screen.ManageSession,
             Screen.DownloadTranscriptionModel => Screen.TeamRadio,
+            Screen.SelectDriver => state.PreviousScreen,
             _ => Screen.Main,
         };
+
+        state.CursorOffset = 0;
 
         return Task.CompletedTask;
     }
