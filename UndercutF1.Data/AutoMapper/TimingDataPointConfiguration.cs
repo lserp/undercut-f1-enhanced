@@ -27,6 +27,7 @@ public class TimingDataPointConfiguration : Profile
             .ConvertUsingDictionaryMerge();
 
         CreateMap<TimingDataPoint.Driver, TimingDataPoint.Driver>()
+            .ForMember(x => x.IsPitLap, x => x.Ignore())
             .ForAllMembers(opts => opts.Condition((_, _, member) => member != null));
 
         CreateMap<TimingDataPoint.Driver.BestLap, TimingDataPoint.Driver.BestLap>()

@@ -115,20 +115,29 @@ public static class DisplayUtils
         };
 
     public static IRenderable GetGapBetweenLines(
-        TimingDataPoint.Driver? from,
-        TimingDataPoint.Driver to,
+        Dictionary<string, TimingDataPoint.Driver> data,
+        string? from,
+        string to,
         Decoration decoration = Decoration.None
     )
     {
+        if (from is null)
+        {
+            return Text.Empty;
+        }
+
         if (from == to)
         {
             return new Text("-------", STYLE_INVERT);
         }
 
-        if (from?.GapToLeaderSeconds() is not null && to.GapToLeaderSeconds() is not null)
+        var fromGapToLeader = data.SmartGapToLeaderSeconds(from);
+        var toGapToLeader = data.SmartGapToLeaderSeconds(to);
+
+        if (fromGapToLeader is not null && toGapToLeader is not null)
         {
             var style = STYLE_NORMAL.Combine(new(decoration: decoration));
-            var gap = to.GapToLeaderSeconds() - from.GapToLeaderSeconds();
+            var gap = toGapToLeader - fromGapToLeader;
             return new Text($"{(gap > 0 ? "+" : "")}{gap, 3} ".ToFixedWidth(8), style);
         }
 

@@ -86,8 +86,9 @@ public class TimingTowerDisplay(
             ?.BestLapTime;
 
         var lapNumber = lapCountProcessor.Latest?.CurrentLap ?? 0;
+        var lines = timingData.Latest.GetOrderedLines();
 
-        foreach (var (driverNumber, line) in timingData.Latest.GetOrderedLines())
+        foreach (var (driverNumber, line) in lines)
         {
             var driver = driverList.Latest?.GetValueOrDefault(driverNumber) ?? new();
             var position =
@@ -163,7 +164,7 @@ public class TimingTowerDisplay(
                     $"{stint?.Compound?[0]} {stint?.TotalLaps, 2}",
                     DisplayUtils.GetStyle(stint)
                 ),
-                DisplayUtils.GetGapBetweenLines(comparisonDataPoint.Value, line),
+                DisplayUtils.GetGapBetweenLines(lines, comparisonDataPoint.Key, driverNumber),
                 DisplayUtils.DriverTag(driver, line, selected: isComparisonLine)
             );
         }

@@ -17,4 +17,5 @@ public enum Screen
     DebugData,
     DownloadTranscriptionModel,
     Info,
+    SelectDriver,
 }
