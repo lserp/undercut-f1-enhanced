@@ -112,9 +112,7 @@ public class TimingHistoryDisplay(
             var previousLap = previousLapDrivers?.GetValueOrDefault(driverNumber) ?? new();
             var teamColour = driver.TeamColour ?? "000000";
 
-            var driverTagDecoration = state.SelectedDrivers.Contains(driverNumber)
-                ? Decoration.None
-                : Decoration.Dim;
+            var driverTagDecoration = driver.IsSelected ? Decoration.None : Decoration.Dim;
 
             table.AddRow(
                 DisplayUtils.DriverTag(
@@ -249,7 +247,7 @@ public class TimingHistoryDisplay(
                 var lapTime = timingData.LastLapTime?.ToTimeSpan();
                 // Use the threshold to null out laps that are too slow
                 // (attempting to avoid in and out laps from skewing the chart)
-                if (lapTime > threshold || timingData.IsPitLap.GetValueOrDefault())
+                if (lapTime > threshold || timingData.IsPitLap)
                 {
                     lapSeriesData[driver].Add(new(lap, null));
                 }
@@ -278,7 +276,7 @@ public class TimingHistoryDisplay(
                         {
                             StrokeThickness = 2,
                         },
-                        IsVisible = state.SelectedDrivers.Contains(x.Key),
+                        IsVisible = driverList.IsSelected(x.Key),
                         LineSmoothness = 0,
                         // Add the drivers name next to the final data point, as a series label
                         DataLabelsFormatter = p =>
@@ -323,7 +321,7 @@ public class TimingHistoryDisplay(
                         IsAntialias = false,
                         StrokeThickness = 2,
                     },
-                    IsVisible = state.SelectedDrivers.Contains(x.Key),
+                    IsVisible = driverList.IsSelected(x.Key),
                     LineSmoothness = 0,
                     // Add the drivers name next to the final data point, as a series label
                     DataLabelsFormatter = p =>

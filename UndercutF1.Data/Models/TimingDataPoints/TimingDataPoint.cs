@@ -30,7 +30,7 @@ public sealed record TimingDataPoint : ILiveTimingDataPoint
         ///
         /// The intention of the property is to allow for easy filtering of non-flying laps from lap-by-lap data.
         /// </summary>
-        public bool? IsPitLap { get; set; }
+        public bool IsPitLap { get; set; }
 
         public int? NumberOfLaps { get; set; }
         public LapSectorTime? LastLapTime { get; set; }

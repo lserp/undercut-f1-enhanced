@@ -2,8 +2,6 @@ using AutoMapper;
 
 namespace UndercutF1.Data;
 
-public class DriverListProcessor(IMapper mapper) : ProcessorBase<DriverListDataPoint>(mapper);
-
 public class HeartbeatProcessor(IMapper mapper) : ProcessorBase<HeartbeatDataPoint>(mapper);
 
 public class LapCountProcessor(IMapper mapper) : ProcessorBase<LapCountDataPoint>(mapper);

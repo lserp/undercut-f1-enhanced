@@ -7,6 +7,7 @@ public class DriverListDataPointConfiguration : Profile
     public DriverListDataPointConfiguration()
     {
         CreateMap<DriverListDataPoint.Driver, DriverListDataPoint.Driver>()
+            .ForMember(x => x.IsSelected, x => x.Ignore())
             .ForAllMembers(opts => opts.Condition((_, _, member) => member != null));
 
         CreateMap<

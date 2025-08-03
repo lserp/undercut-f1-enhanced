@@ -2,8 +2,11 @@ using UndercutF1.Data;
 
 namespace UndercutF1.Console;
 
-public sealed class SelectDriverInputHandler(State state, TimingDataProcessor timingData)
-    : IInputHandler
+public sealed class SelectDriverInputHandler(
+    State state,
+    TimingDataProcessor timingData,
+    DriverListProcessor driverList
+) : IInputHandler
 {
     public bool IsEnabled => true;
 
@@ -24,9 +27,10 @@ public sealed class SelectDriverInputHandler(State state, TimingDataProcessor ti
             .Latest.Lines.FirstOrDefault(x => x.Value.Line == state.CursorOffset)
             .Key;
 
-        if (!state.SelectedDrivers.Remove(selectedDriverNumber))
+        var driver = driverList.Latest.GetValueOrDefault(selectedDriverNumber);
+        if (driver is not null)
         {
-            state.SelectedDrivers.Add(selectedDriverNumber);
+            driver.IsSelected = !driver.IsSelected;
         }
 
         return Task.CompletedTask;

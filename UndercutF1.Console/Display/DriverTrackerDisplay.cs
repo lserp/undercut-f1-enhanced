@@ -155,7 +155,7 @@ public class DriverTrackerDisplay : IDisplay
 
             var driverTag = DisplayUtils.MarkedUpDriverNumber(driver);
             var decoration = Decoration.None;
-            if (!_state.SelectedDrivers.Contains(driverNumber))
+            if (!driver.IsSelected)
             {
                 driverTag = $"[dim]{driverTag}[/]";
                 decoration |= Decoration.Dim;
@@ -261,14 +261,16 @@ public class DriverTrackerDisplay : IDisplay
         }
 
         // Add all the selected drivers positions to the map
-        foreach (var (driverNumber, data) in _driverList.Latest)
+        foreach (var (driverNumber, driver) in _driverList.Latest)
         {
             var position = _positionData
                 .Latest.Position.LastOrDefault()
                 ?.Entries.GetValueOrDefault(driverNumber);
             if (position is not null && position.X.HasValue && position.Y.HasValue)
             {
-                if (_state.SelectedDrivers.Contains(driverNumber))
+                var driverHighlighted =
+                    _timingData.Latest.Lines[driverNumber].Line == _state.CursorOffset;
+                if (driver.IsSelected || driverHighlighted)
                 {
                     var (x, y) = TransformPoint(
                         (x: position.X.Value, y: position.Y.Value),
@@ -276,21 +278,21 @@ public class DriverTrackerDisplay : IDisplay
                     );
                     var paint = new SKPaint
                     {
-                        Color = SKColor.Parse(data.TeamColour),
+                        Color = SKColor.Parse(driver.TeamColour),
                         TextSize = 24,
                         Typeface = _boldTypeface,
                         IsAntialias = false,
                     };
 
                     // Draw a white box around the driver currently selected by the cursor
-                    if (_timingData.Latest.Lines[driverNumber].Line == _state.CursorOffset)
+                    if (driverHighlighted)
                     {
                         var rectPaint = _selectedPaint;
                         canvas.DrawRoundRect(x - 8, y - 12, 65, 24, 4, 4, rectPaint);
                     }
 
                     canvas.DrawCircle(x, y, 5, paint);
-                    canvas.DrawText(data.Tla, x + 8, y + 8, paint);
+                    canvas.DrawText(driver.Tla, x + 8, y + 8, paint);
                 }
             }
         }
