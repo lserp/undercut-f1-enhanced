@@ -115,13 +115,21 @@ public class TyreStintDisplay(
             // Use a consistent tyre compound header to centre it nicely
             var header = stint.Compound switch
             {
-                "HARD" => "     HARD     ",
-                "MEDIUM" => "    MEDIUM    ",
-                "SOFT" => "     SOFT     ",
-                "INTERMEDIATE" => " INTERMEDIATE ",
-                "WET" => "      WET     ",
-                _ => "    UNKNOWN   ",
+                "HARD" => " HARD",
+                "MEDIUM" => " MED ",
+                "SOFT" => " SOFT",
+                "INTERMEDIATE" => " INT ",
+                "WET" => " WET ",
+                _ => " UNK ",
             };
+            if (pitStop?.Lap is not null)
+            {
+                header += $"LAP {pitStop?.Lap ?? "?"} ".PadLeft(9);
+            }
+            else
+            {
+                header = header.PadRight(14);
+            }
             var rows = new List<Markup>
             {
                 new($"[{compoundMarkup}]{header}[/]"),
