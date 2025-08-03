@@ -145,7 +145,9 @@ public class DriverTrackerDisplay : IDisplay
             x.Value.Line == _state.CursorOffset
         );
 
-        foreach (var (driverNumber, line) in _timingData.Latest.GetOrderedLines())
+        var lines = _timingData.Latest.GetOrderedLines();
+
+        foreach (var (driverNumber, line) in lines)
         {
             var driver = _driverList.Latest?.GetValueOrDefault(driverNumber) ?? new();
             var car = _carData
@@ -169,8 +171,9 @@ public class DriverTrackerDisplay : IDisplay
                     new Markup(driverTag),
                     _state.CursorOffset > 0
                         ? DisplayUtils.GetGapBetweenLines(
-                            comparisonDataPoint.Value,
-                            line,
+                            lines,
+                            comparisonDataPoint.Key,
+                            driverNumber,
                             decoration
                         )
                         : new Text(
