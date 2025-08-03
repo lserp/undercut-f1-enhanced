@@ -137,7 +137,7 @@ public static class DisplayUtils
         if (fromGapToLeader is not null && toGapToLeader is not null)
         {
             var style = STYLE_NORMAL.Combine(new(decoration: decoration));
-            var gap = fromGapToLeader - toGapToLeader;
+            var gap = toGapToLeader - fromGapToLeader;
             return new Text($"{(gap > 0 ? "+" : "")}{gap, 3} ".ToFixedWidth(8), style);
         }
 

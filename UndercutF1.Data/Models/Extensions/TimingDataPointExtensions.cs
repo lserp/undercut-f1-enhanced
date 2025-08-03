@@ -69,11 +69,16 @@ public static class TimingDataPointExtensions
             return null;
         }
 
+        // Take the lap line which gap a gap to leader, and use that as a basis
+        var lastUnlappedDriver = lines
+            .LastOrDefault(x => x.Value.GapToLeaderSeconds().HasValue, lines.First())
+            .Value;
+
         var summedGapsOfPriorDrivers = lines
-            .Where(x => x.Value.Line <= line.Line)
+            .Where(x => x.Value.Line > lastUnlappedDriver.Line && x.Value.Line <= line.Line)
             .Sum(x => x.Value.IntervalToPositionAhead?.IntervalSeconds() ?? 0);
 
-        return summedGapsOfPriorDrivers;
+        return lastUnlappedDriver.GapToLeaderSeconds() + summedGapsOfPriorDrivers;
     }
 
     public static TimeSpan? ToTimeSpan(this TimingDataPoint.Driver.BestLap lap) =>
