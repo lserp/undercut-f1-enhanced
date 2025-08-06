@@ -14,11 +14,19 @@ This is a fork of the excellent [undercut-f1](https://github.com/JustAman62/unde
 - Performance optimized with smart caching system (fixes 200ms+ frame times)
 - Realistic positioning based on actual track geometry and pit time loss
 
+![Driver Tracker with Pit Projections](docs/screenshots/driver-tracker-pit-projections.png)
+
+![Driver Tracker with Pit Projections](docs/screenshots/driver-tracker-pit-projections.png)
+
 ### **Simplified Circle of Doom**
 - Clean text-based pit strategy analysis with driver status overview
 - Removed complex ASCII graphics for better performance and readability
 - Focus on strategic information: gap times, pit stops, and time loss projections
 - Fast, responsive interface without visual complexity
+
+![Circle of Doom Enhanced](docs/screenshots/circle-of-doom-enhanced.png)
+
+![Circle of Doom Enhanced](docs/screenshots/circle-of-doom-enhanced.png)
 
 ## 🎯 **Key Improvements:**
 
