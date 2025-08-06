@@ -19,6 +19,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\UndercutF1.Data\UndercutF1.Data.csproj" />
+		<ProjectReference Include="..\UndercutF1.Console\UndercutF1.Console.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="TimingData.json">

@@ -32,6 +32,11 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<LogDisplayOptions>();
         services.AddSingleton<StartSimulatedSessionOptions>();
         services.AddSingleton<PitStopTimeProvider>();
+        
+        // Circular track visualization services
+        services.AddSingleton<Services.CircularTrackPositionCalculator>();
+        services.AddSingleton<Services.CircularTrackRenderer>();
+        services.AddSingleton<Services.CircularTrackGraphicsRenderer>();
 
         return services;
     }

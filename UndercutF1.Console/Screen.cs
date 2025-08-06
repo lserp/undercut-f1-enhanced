@@ -15,6 +15,7 @@ public enum Screen
     TeamRadio,
     TyreStints,
     CircleOfDoom,
+    CircularTrack,
     DebugData,
     DownloadTranscriptionModel,
     Info,
