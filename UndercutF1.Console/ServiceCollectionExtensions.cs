@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CommonDisplayComponents>();
         services.AddSingleton<LogDisplayOptions>();
         services.AddSingleton<StartSimulatedSessionOptions>();
+        services.AddSingleton<PitStopTimeProvider>();
 
         return services;
     }

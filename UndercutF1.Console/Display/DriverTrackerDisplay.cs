@@ -60,9 +60,16 @@ public class DriverTrackerDisplay : IDisplay
     private readonly SessionInfoProcessor _sessionInfo;
     private readonly TerminalInfoProvider _terminalInfo;
     private readonly IOptions<Options> _options;
+    private readonly PitStopSeriesProcessor _pitStopSeries;
+    private readonly PitStopTimeProvider _pitStopTimeProvider;
     private TransformFactors? _transform = null;
 
     private string[] _trackMapControlSequence = [];
+    private static bool _showPitProjections = false;
+    
+    // Performance optimization: cache pit projections
+    private readonly Dictionary<string, (int X, int Y, DateTime CachedAt)> _pitProjectionCache = new();
+    private static readonly TimeSpan CacheExpiry = TimeSpan.FromSeconds(2); // Cache for 2 seconds
 
     public DriverTrackerDisplay(
         State state,
@@ -73,7 +80,9 @@ public class DriverTrackerDisplay : IDisplay
         CarDataProcessor carData,
         SessionInfoProcessor sessionInfo,
         TerminalInfoProvider terminalInfo,
-        IOptions<Options> options
+        IOptions<Options> options,
+        PitStopSeriesProcessor pitStopSeries,
+        PitStopTimeProvider pitStopTimeProvider
     )
     {
         _state = state;
@@ -85,12 +94,16 @@ public class DriverTrackerDisplay : IDisplay
         _sessionInfo = sessionInfo;
         _terminalInfo = terminalInfo;
         _options = options;
+        _pitStopSeries = pitStopSeries;
+        _pitStopTimeProvider = pitStopTimeProvider;
 
         // The transform factors are dependant on the size of the terminal, so force a recalc if the size changes
         Terminal.Resized += (_size) => _transform = null;
     }
 
     public Screen Screen => Screen.DriverTracker;
+    
+    public static void TogglePitProjections() => _showPitProjections = !_showPitProjections;
 
     public Task<IRenderable> GetContentAsync()
     {
@@ -111,6 +124,12 @@ public class DriverTrackerDisplay : IDisplay
                 TERM: {Environment.GetEnvironmentVariable("TERM")}
                 TERM_PROGRAM: {Environment.GetEnvironmentVariable("TERM_PROGRAM")}
                 """;
+        }
+        else
+        {
+            trackMapMessage = _showPitProjections 
+                ? "🔧 Pit Stop Projections: ON - Press T to toggle"
+                : "Press T to show pit stop projections";
         }
         var driverTower = GetDriverTower();
         var statusPanel = _common.GetStatusPanel();
@@ -296,6 +315,12 @@ public class DriverTrackerDisplay : IDisplay
 
                     canvas.DrawCircle(x, y, 5, paint);
                     canvas.DrawText(driver.Tla, x + 8, y + 8, paint);
+
+                    // Draw pit stop projection if enabled
+                    if (_showPitProjections)
+                    {
+                        DrawPitStopProjection(canvas, driverNumber, driver, position, _transform);
+                    }
                 }
             }
         }
@@ -435,6 +460,129 @@ public class DriverTrackerDisplay : IDisplay
         {
             await Terminal.OutAsync(sequence);
         }
+    }
+
+    private void DrawPitStopProjection(SKCanvas canvas, string driverNumber, DriverListDataPoint.Driver driver, PositionDataPoint.PositionData.Entry currentPosition, TransformFactors transform)
+    {
+        var driverTiming = _timingData.Latest.Lines.GetValueOrDefault(driverNumber);
+        if (driverTiming == null || driverTiming.InPit == true) return;
+
+        // Use cached projection for performance
+        var projectedPosition = GetCachedPitProjection(driverNumber, currentPosition);
+        if (projectedPosition == null) return;
+
+        var (projX, projY) = TransformPoint((x: projectedPosition.Value.X, y: projectedPosition.Value.Y), transform);
+        var (currentX, currentY) = TransformPoint((x: currentPosition.X!.Value, y: currentPosition.Y!.Value), transform);
+
+        // Draw connection line (dashed) - simplified for performance
+        var linePaint = new SKPaint
+        {
+            Color = SKColor.Parse(driver.TeamColour).WithAlpha(150),
+            StrokeWidth = 2,
+            IsAntialias = false,
+            PathEffect = SKPathEffect.CreateDash(new float[] { 8, 4 }, 0)
+        };
+        canvas.DrawLine(currentX, currentY, projX, projY, linePaint);
+
+        // Draw projected position as hollow circle
+        var hollowPaint = new SKPaint
+        {
+            Color = SKColor.Parse(driver.TeamColour),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 2,
+            IsAntialias = false,
+        };
+        canvas.DrawCircle(projX, projY, 6, hollowPaint);
+
+        // Simplified labeling for performance
+        var labelPaint = new SKPaint
+        {
+            Color = SKColors.White,
+            TextSize = 12,
+            Typeface = _boldTypeface,
+            IsAntialias = false,
+        };
+        canvas.DrawText("PIT", projX + 8, projY + 4, labelPaint);
+    }
+
+    private (int X, int Y)? GetCachedPitProjection(string driverNumber, PositionDataPoint.PositionData.Entry currentPosition)
+    {
+        var now = DateTime.UtcNow;
+        
+        // Check cache first
+        if (_pitProjectionCache.TryGetValue(driverNumber, out var cached) && 
+            now - cached.CachedAt < CacheExpiry)
+        {
+            return (cached.X, cached.Y);
+        }
+
+        // Calculate new projection
+        var projection = CalculatePitStopProjection(driverNumber, currentPosition);
+        if (projection.HasValue)
+        {
+            _pitProjectionCache[driverNumber] = (projection.Value.X, projection.Value.Y, now);
+        }
+
+        return projection;
+    }
+
+    private (int X, int Y)? CalculatePitStopProjection(string driverNumber, PositionDataPoint.PositionData.Entry currentPosition)
+    {
+        var driverTiming = _timingData.Latest.Lines.GetValueOrDefault(driverNumber);
+        if (driverTiming == null) return null;
+
+        var circuitPoints = _sessionInfo.Latest.CircuitPoints;
+        if (!circuitPoints.Any()) return null;
+
+        // Get current driver's position on track as percentage (0.0 to 1.0)
+        var currentTrackProgress = CalculateTrackProgress(currentPosition, circuitPoints);
+        
+        // Estimate where driver would be after pit stop
+        // Pit stops typically take 20-30 seconds, during which other drivers advance
+        // Assume driver loses about 30-40% of a lap worth of track position
+        var estimatedLoss = 0.35; // 35% of track length
+        var projectedProgress = (currentTrackProgress + estimatedLoss) % 1.0;
+        
+        // Find the track point at the projected progress
+        var targetIndex = (int)(projectedProgress * circuitPoints.Count);
+        targetIndex = Math.Min(targetIndex, circuitPoints.Count - 1);
+        
+        var projectedPoint = circuitPoints[targetIndex];
+        
+        // Add small random offset to avoid exact overlap with other projections
+        var offsetRange = 100; // pixels
+        var random = new Random(driverNumber.GetHashCode()); // Consistent per driver
+        var offsetX = random.Next(-offsetRange, offsetRange);
+        var offsetY = random.Next(-offsetRange, offsetRange);
+        
+        return (projectedPoint.x + offsetX, projectedPoint.y + offsetY);
+    }
+
+    private double CalculateTrackProgress(PositionDataPoint.PositionData.Entry position, List<(int x, int y)> circuitPoints)
+    {
+        if (!position.X.HasValue || !position.Y.HasValue) return 0.0;
+        
+        var currentX = position.X.Value;
+        var currentY = position.Y.Value;
+        
+        // Find the closest point on the track to determine progress
+        var minDistance = double.MaxValue;
+        var closestIndex = 0;
+        
+        for (var i = 0; i < circuitPoints.Count; i++)
+        {
+            var point = circuitPoints[i];
+            var distance = Math.Sqrt(Math.Pow(currentX - point.x, 2) + Math.Pow(currentY - point.y, 2));
+            
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestIndex = i;
+            }
+        }
+        
+        // Return progress as percentage of track completion
+        return (double)closestIndex / circuitPoints.Count;
     }
 
     private record TransformFactors(int ScaleFactor, int ShiftX, int ShiftY, int MaxX, int MaxY);

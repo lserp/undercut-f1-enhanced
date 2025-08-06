@@ -1,5 +1,6 @@
 using Spectre.Console;
 using Spectre.Console.Advanced;
+using UndercutF1.Console.ExternalPlayerSync;
 using UndercutF1.Console.Graphics;
 
 namespace UndercutF1.Console;
@@ -24,7 +25,11 @@ public static partial class CommandHandler
             forceGraphicsProtocol: forceGraphicsProtocol
         );
 
-        builder.Services.AddSingleton<State>().AddDisplays().AddSingleton<TerminalInfoProvider>();
+        builder.Services
+            .AddSingleton<State>()
+            .AddDisplays()
+            .AddSingleton<TerminalInfoProvider>()
+            .AddSingleton<WebSocketSynchroniser>();
 
         var app = builder.Build();
 
