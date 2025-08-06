@@ -31,9 +31,12 @@ public class CircularTrackGraphicsRenderer
             // Calculate optimal image size based on terminal dimensions
             var imageSize = CalculateOptimalImageSize(terminalWidth, terminalHeight);
             
-            // Create the image
-            var imageInfo = new SKImageInfo(imageSize, imageSize);
+            // Create the image with a more compatible format
+            var imageInfo = new SKImageInfo(imageSize, imageSize, SKColorType.Rgba8888, SKAlphaType.Premul);
             using var surface = SKSurface.Create(imageInfo);
+            
+            ArgumentNullException.ThrowIfNull(surface, "Failed to create SkiaSharp surface - SkiaSharp may not be properly initialized");
+            
             var canvas = surface.Canvas;
             
             // Clear background
@@ -306,15 +309,9 @@ public class CircularTrackGraphicsRenderer
         var termProgram = Environment.GetEnvironmentVariable("TERM_PROGRAM");
         var term = Environment.GetEnvironmentVariable("TERM");
         
-        // Use appropriate graphics protocol based on terminal
-        return termProgram?.ToLower() switch
-        {
-            "iterm.app" => CreateITerm2Sequence(image, height, width),
-            "kitty" => CreateKittySequence(image, height, width),
-            _ when term?.Contains("sixel") == true => CreateSixelSequence(image),
-            _ when term?.Contains("xterm") == true => CreateITerm2Sequence(image, height, width),
-            _ => CreateITerm2Sequence(image, height, width) // Default fallback
-        };
+        // For now, just use iTerm2 format to eliminate variables
+        var result = CreateITerm2Sequence(image, height, width);
+        return result;
     }
 
     /// <summary>

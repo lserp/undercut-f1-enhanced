@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Circular Track Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .track-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .session-header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .session-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .session-info {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .track-svg {
+            width: min(80vh, 80vw);
+            height: min(80vh, 80vw);
+            max-width: 600px;
+            max-height: 600px;
+        }
+
+        .track-circle {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 8;
+            opacity: 0.8;
+        }
+
+        .track-inner {
+            fill: none;
+            stroke: #cccccc;
+            stroke-width: 2;
+            opacity: 0.6;
+        }
+
+        .start-finish-line {
+            stroke: #ffff00;
+            stroke-width: 6;
+            stroke-linecap: round;
+        }
+
+        .start-finish-text {
+            fill: #ffff00;
+            font-size: 14px;
+            font-weight: bold;
+            text-anchor: middle;
+        }
+
+        .driver-dot {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .driver-dot:hover {
+            transform: scale(1.2);
+        }
+
+        .driver-number {
+            fill: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+
+        .info-panel {
+            width: 350px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .info-section {
+            margin-bottom: 25px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #00ff88;
+            border-bottom: 2px solid #00ff88;
+            padding-bottom: 5px;
+        }
+
+        .driver-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .driver-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .driver-position {
+            font-weight: bold;
+            width: 30px;
+            text-align: center;
+        }
+
+        .driver-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 10px;
+            border: 2px solid white;
+        }
+
+        .driver-info {
+            flex: 1;
+        }
+
+        .driver-name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .driver-gap {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .session-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-live { background: #00ff00; }
+        .status-stale { background: #ffff00; }
+        .status-offline { background: #ff0000; }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-symbol {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 18px;
+        }
+
+        .error {
+            color: #ff4444;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .loading {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        🏎️ Loading F1 Circular Track Visualization...
+    </div>
+
+    <div id="app" class="container" style="display: none;">
+        <div class="track-container">
+            <div class="session-header">
+                <div class="session-title" id="sessionTitle">F1 Session</div>
+                <div class="session-info" id="sessionInfo">Loading...</div>
+            </div>
+            
+            <svg class="track-svg" id="trackSvg" viewBox="0 0 400 400">
+                <!-- Track circle -->
+                <circle cx="200" cy="200" r="180" class="track-circle" />
+                <circle cx="200" cy="200" r="172" class="track-inner" />
+                
+                <!-- Start/Finish line -->
+                <line x1="200" y1="20" x2="200" y2="36" class="start-finish-line" />
+                <text x="200" y="15" class="start-finish-text">S/F</text>
+                
+                <!-- Drivers will be added here dynamically -->
+                <g id="driversGroup"></g>
+            </svg>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-section">
+                <div class="info-title">
+                    <span class="status-indicator status-live" id="statusIndicator"></span>
+                    Live Positions
+                </div>
+                <div class="driver-list" id="driverList">
+                    <!-- Driver list will be populated here -->
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-title">Session Stats</div>
+                <div class="session-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="currentLap">-</div>
+                        <div class="stat-label">Current Lap</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalLaps">-</div>
+                        <div class="stat-label">Total Laps</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="activeDrivers">-</div>
+                        <div class="stat-label">Active Drivers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="driversInPit">-</div>
+                        <div class="stat-label">In Pit</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-title">Legend</div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #00ff00;"></div>
+                        <span>On Track</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #ffff00;"></div>
+                        <span>In Pit</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #ff8800;"></div>
+                        <span>Pit Out</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-symbol" style="background: #ff0000;"></div>
+                        <span>Retired</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CircularTrackVisualization {
+            constructor() {
+                this.drivers = [];
+                this.sessionInfo = {};
+                this.updateInterval = null;
+                this.isLoading = true;
+                
+                this.init();
+            }
+
+            async init() {
+                try {
+                    await this.loadData();
+                    this.startAutoUpdate();
+                    this.showApp();
+                } catch (error) {
+                    this.showError(error.message);
+                }
+            }
+
+            async loadData() {
+                try {
+                    const [driversResponse, sessionResponse] = await Promise.all([
+                        fetch('/api/circular-track/positions'),
+                        fetch('/api/circular-track/session-info')
+                    ]);
+
+                    if (!driversResponse.ok || !sessionResponse.ok) {
+                        throw new Error('Failed to fetch data from API');
+                    }
+
+                    const driversData = await driversResponse.json();
+                    const sessionData = await sessionResponse.json();
+
+                    this.drivers = driversData.drivers || [];
+                    this.sessionInfo = sessionData;
+
+                    this.updateDisplay();
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    throw error;
+                }
+            }
+
+            updateDisplay() {
+                this.updateSessionHeader();
+                this.updateDriverPositions();
+                this.updateDriverList();
+                this.updateSessionStats();
+                this.updateStatusIndicator();
+            }
+
+            updateSessionHeader() {
+                const title = document.getElementById('sessionTitle');
+                const info = document.getElementById('sessionInfo');
+                
+                const sessionName = this.sessionInfo.sessionName || 'F1 Session';
+                const meetingName = this.sessionInfo.meetingName || '';
+                const currentLap = this.sessionInfo.currentLap || 0;
+                const totalLaps = this.sessionInfo.totalLaps || 0;
+
+                title.textContent = `${sessionName}${meetingName ? ' - ' + meetingName : ''}`;
+                
+                if (totalLaps > 0) {
+                    info.textContent = `Lap ${currentLap} of ${totalLaps}`;
+                } else {
+                    info.textContent = this.sessionInfo.sessionType || 'Session';
+                }
+            }
+
+            updateDriverPositions() {
+                const driversGroup = document.getElementById('driversGroup');
+                driversGroup.innerHTML = '';
+
+                this.drivers.forEach(driver => {
+                    const angle = (driver.position.angle - 90) * Math.PI / 180; // -90 to start at top
+                    const radius = 180 * driver.position.radialPosition;
+                    
+                    const x = 200 + radius * Math.cos(angle);
+                    const y = 200 + radius * Math.sin(angle);
+
+                    // Create driver dot
+                    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    dot.setAttribute('cx', x);
+                    dot.setAttribute('cy', y);
+                    dot.setAttribute('r', '8');
+                    dot.setAttribute('fill', `#${driver.teamColor}`);
+                    dot.setAttribute('stroke', 'white');
+                    dot.setAttribute('stroke-width', '2');
+                    dot.setAttribute('class', 'driver-dot');
+                    dot.setAttribute('data-driver', driver.driverNumber);
+
+                    // Create driver number text
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', x);
+                    text.setAttribute('y', y + 3);
+                    text.setAttribute('class', 'driver-number');
+                    text.textContent = driver.driverNumber;
+
+                    // Add hover effects
+                    dot.addEventListener('mouseenter', () => this.showDriverTooltip(driver, x, y));
+                    dot.addEventListener('mouseleave', () => this.hideDriverTooltip());
+
+                    driversGroup.appendChild(dot);
+                    driversGroup.appendChild(text);
+                });
+            }
+
+            updateDriverList() {
+                const driverList = document.getElementById('driverList');
+                driverList.innerHTML = '';
+
+                this.drivers
+                    .sort((a, b) => a.racePosition - b.racePosition)
+                    .slice(0, 10) // Show top 10
+                    .forEach(driver => {
+                        const item = document.createElement('div');
+                        item.className = 'driver-item';
+                        
+                        item.innerHTML = `
+                            <div class="driver-position">P${driver.racePosition}</div>
+                            <div class="driver-color" style="background-color: #${driver.teamColor}"></div>
+                            <div class="driver-info">
+                                <div class="driver-name">${driver.driverTla}</div>
+                                <div class="driver-gap">${driver.gapToLeader || 'Leader'}</div>
+                            </div>
+                        `;
+                        
+                        driverList.appendChild(item);
+                    });
+            }
+
+            updateSessionStats() {
+                document.getElementById('currentLap').textContent = this.sessionInfo.currentLap || '-';
+                document.getElementById('totalLaps').textContent = this.sessionInfo.totalLaps || '-';
+                document.getElementById('activeDrivers').textContent = this.sessionInfo.activeDrivers || '-';
+                document.getElementById('driversInPit').textContent = this.sessionInfo.driversInPit || '-';
+            }
+
+            updateStatusIndicator() {
+                const indicator = document.getElementById('statusIndicator');
+                const hasData = this.drivers.length > 0;
+                
+                if (hasData) {
+                    indicator.className = 'status-indicator status-live';
+                } else {
+                    indicator.className = 'status-indicator status-stale';
+                }
+            }
+
+            showDriverTooltip(driver, x, y) {
+                // Create tooltip (simplified for now)
+                console.log(`Driver: ${driver.driverName} (${driver.driverTla})`);
+                console.log(`Position: P${driver.racePosition}`);
+                console.log(`Gap: ${driver.gapToLeader}`);
+                console.log(`Status: ${driver.status}`);
+            }
+
+            hideDriverTooltip() {
+                // Hide tooltip
+            }
+
+            startAutoUpdate() {
+                this.updateInterval = setInterval(() => {
+                    this.loadData().catch(error => {
+                        console.error('Auto-update failed:', error);
+                    });
+                }, 1000); // Update every second
+            }
+
+            showApp() {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                this.isLoading = false;
+            }
+
+            showError(message) {
+                document.getElementById('loading').innerHTML = `
+                    <div class="error">
+                        ❌ Error: ${message}
+                        <br><br>
+                        Make sure the F1 application is running with API enabled.
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize the visualization when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new CircularTrackVisualization();
+        });
+    </script>
+</body>
+</html>

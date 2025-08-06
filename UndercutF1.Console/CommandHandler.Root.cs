@@ -84,10 +84,16 @@ public static partial class CommandHandler
         if (options.ApiEnabled)
         {
             app.UseSwagger().UseSwaggerUI();
+            
+            // Enable static file serving for web interface
+            app.UseStaticFiles();
 
             app.MapSwagger();
 
-            app.MapControlEndpoints().MapTimingEndpoints();
+            app.MapControlEndpoints().MapTimingEndpoints().MapCircularTrackEndpoints();
+            
+            // Add route for circular track web interface
+            app.MapGet("/circular-track", () => Results.Redirect("/circular-track.html"));
         }
 
         app.Logger.LogDebug("Options: {Options}", options);

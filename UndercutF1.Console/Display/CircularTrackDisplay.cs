@@ -119,10 +119,9 @@ public class CircularTrackDisplay(
             {
                 return graphicsRenderer.RenderCircle(driverPositions, terminalWidth, terminalHeight, positionLookup);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Fallback to ASCII renderer if graphics fails
-                System.Diagnostics.Debug.WriteLine($"Graphics rendering failed, falling back to ASCII: {ex.Message}");
                 return renderer.RenderCircle(driverPositions, terminalWidth, terminalHeight, positionLookup);
             }
         }
