@@ -16,6 +16,10 @@ public static class CircularTrackEndpoints
             .WithTags("Circular Track")
             .WithSummary("Get session information for circular track display");
 
+        app.MapGet("/api/circular-track/debug", GetDebugInfo)
+            .WithTags("Circular Track")
+            .WithSummary("Get debug information for position calculation");
+
         return app;
     }
 
@@ -118,5 +122,57 @@ public static class CircularTrackEndpoints
             .FirstOrDefault();
             
         return leader?.NumberOfLaps ?? lapCount?.Latest?.CurrentLap ?? 1;
+    }
+
+    private static IResult GetDebugInfo(
+        TimingDataProcessor timingData,
+        DriverListProcessor driverList,
+        LapCountProcessor lapCount,
+        CircularTrackPositionCalculator positionCalculator)
+    {
+        try
+        {
+            if (timingData?.Latest?.Lines == null)
+            {
+                return Results.Ok(new { message = "No timing data available" });
+            }
+
+            var debugInfo = new List<object>();
+            var currentLap = lapCount?.Latest?.CurrentLap ?? 1;
+            var leaderLap = GetLeaderLap(timingData, lapCount);
+
+            // Get first few drivers for debugging
+            foreach (var (driverNumber, timingLine) in timingData.Latest.Lines.Take(5))
+            {
+                var driver = driverList?.Latest?.GetValueOrDefault(driverNumber);
+                if (driver == null) continue;
+
+                var circularPosition = positionCalculator.CalculatePosition(timingLine, currentLap, leaderLap);
+                var trackProgress = positionCalculator.GetTrackProgress(timingLine);
+
+                var debug = new
+                {
+                    driverNumber,
+                    driverTla = driver.Tla,
+                    racePosition = timingLine.Line,
+                    sectors = timingLine.Sectors?.ToDictionary(
+                        kvp => kvp.Key, 
+                        kvp => kvp.Value?.Value ?? "null"
+                    ),
+                    trackProgress,
+                    angle = circularPosition.Angle,
+                    radialPosition = circularPosition.RadialPosition,
+                    lapNumber = circularPosition.LapNumber
+                };
+
+                debugInfo.Add(debug);
+            }
+
+            return Results.Ok(new { drivers = debugInfo, currentLap, leaderLap });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem($"Debug error: {ex.Message}");
+        }
     }
 }

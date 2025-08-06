@@ -370,6 +370,16 @@
                     this.drivers = driversData.drivers || [];
                     this.sessionInfo = sessionData;
 
+                    // Debug logging
+                    if (this.drivers.length > 0) {
+                        console.log('Driver positions:', this.drivers.slice(0, 3).map(d => ({
+                            driver: d.driverTla,
+                            position: d.racePosition,
+                            angle: d.position.angle.toFixed(1),
+                            progress: d.position.trackProgress.toFixed(3)
+                        })));
+                    }
+
                     this.updateDisplay();
                 } catch (error) {
                     console.error('Error loading data:', error);
@@ -407,8 +417,11 @@
                 const driversGroup = document.getElementById('driversGroup');
                 driversGroup.innerHTML = '';
 
-                this.drivers.forEach(driver => {
-                    const angle = (driver.position.angle - 90) * Math.PI / 180; // -90 to start at top
+                // Apply collision avoidance to prevent overlapping
+                const adjustedDrivers = this.applyCollisionAvoidance(this.drivers);
+
+                adjustedDrivers.forEach(driver => {
+                    const angle = (driver.adjustedAngle - 90) * Math.PI / 180; // -90 to start at top
                     const radius = 180 * driver.position.radialPosition;
                     
                     const x = 200 + radius * Math.cos(angle);
@@ -439,6 +452,65 @@
                     driversGroup.appendChild(dot);
                     driversGroup.appendChild(text);
                 });
+            }
+
+            applyCollisionAvoidance(drivers) {
+                const adjustedDrivers = [];
+                const minDistance = 25; // Minimum distance between drivers in pixels
+                
+                // Sort drivers by their original angle to process them in order
+                const sortedDrivers = [...drivers].sort((a, b) => a.position.angle - b.position.angle);
+                
+                sortedDrivers.forEach(driver => {
+                    let adjustedAngle = driver.position.angle;
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    
+                    // Check for collisions with already placed drivers
+                    while (attempts < maxAttempts) {
+                        let hasCollision = false;
+                        
+                        for (const placedDriver of adjustedDrivers) {
+                            const distance = this.calculateDistance(
+                                adjustedAngle, driver.position.radialPosition,
+                                placedDriver.adjustedAngle, placedDriver.position.radialPosition
+                            );
+                            
+                            if (distance < minDistance) {
+                                // Adjust angle to avoid collision
+                                adjustedAngle += 8; // Move 8 degrees
+                                if (adjustedAngle >= 360) adjustedAngle -= 360;
+                                hasCollision = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!hasCollision) break;
+                        attempts++;
+                    }
+                    
+                    adjustedDrivers.push({
+                        ...driver,
+                        adjustedAngle: adjustedAngle
+                    });
+                });
+                
+                return adjustedDrivers;
+            }
+
+            calculateDistance(angle1, radius1, angle2, radius2) {
+                // Convert angles to radians
+                const rad1 = (angle1 - 90) * Math.PI / 180;
+                const rad2 = (angle2 - 90) * Math.PI / 180;
+                
+                // Calculate positions
+                const x1 = 180 * radius1 * Math.cos(rad1);
+                const y1 = 180 * radius1 * Math.sin(rad1);
+                const x2 = 180 * radius2 * Math.cos(rad2);
+                const y2 = 180 * radius2 * Math.sin(rad2);
+                
+                // Return Euclidean distance
+                return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
             }
 
             updateDriverList() {

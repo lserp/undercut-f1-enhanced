@@ -32,16 +32,33 @@ public class CircularTrackPositionCalculator
     }
 
     /// <summary>
-    /// Calculates track progress (0.0-1.0) based on sector completion
+    /// Calculates track progress (0.0-1.0) based on race position and sector completion
     /// </summary>
     /// <param name="driver">Driver timing data</param>
     /// <returns>Progress through current lap (0.0 = start, 1.0 = complete)</returns>
     public double GetTrackProgress(TimingDataPoint.Driver driver)
     {
+        // Start with sector-based progress
+        var sectorProgress = GetSectorBasedProgress(driver);
+        
+        // Add fine-grained positioning based on race position
+        var positionOffset = GetPositionBasedOffset(driver);
+        
+        // Combine both for smoother positioning
+        var combinedProgress = sectorProgress + positionOffset;
+        
+        // Ensure we stay within bounds
+        return Math.Clamp(combinedProgress, 0.01, 0.99);
+    }
+
+    /// <summary>
+    /// Gets basic progress based on sector completion
+    /// </summary>
+    private double GetSectorBasedProgress(TimingDataPoint.Driver driver)
+    {
         if (driver.Sectors == null || driver.Sectors.Count == 0)
         {
-            // No sector data available, use basic position estimate
-            return 0.05; // Assume just started lap
+            return 0.1; // Default start position
         }
 
         // Check sector completion (sectors are keyed as "0", "1", "2")
@@ -49,17 +66,33 @@ public class CircularTrackPositionCalculator
         var sector2Complete = !string.IsNullOrWhiteSpace(driver.Sectors.GetValueOrDefault("1")?.Value);
         var sector3Complete = !string.IsNullOrWhiteSpace(driver.Sectors.GetValueOrDefault("2")?.Value);
 
-        // Use segment data for more precise positioning if available
-        var segmentProgress = CalculateSegmentProgress(driver.Sectors);
-
         return (sector1Complete, sector2Complete, sector3Complete) switch
         {
-            (false, false, false) => Math.Max(0.05, segmentProgress), // Just started lap
-            (true, false, false) => Math.Max(0.33, segmentProgress),   // 1/3 through lap
-            (true, true, false) => Math.Max(0.66, segmentProgress),    // 2/3 through lap
-            (true, true, true) => Math.Max(0.95, segmentProgress),     // Almost complete
-            _ => 0.05
+            (false, false, false) => 0.1,  // Start of lap
+            (true, false, false) => 0.35,  // After sector 1
+            (true, true, false) => 0.65,   // After sector 2
+            (true, true, true) => 0.9,     // After sector 3
+            _ => 0.1
         };
+    }
+
+    /// <summary>
+    /// Gets fine-grained offset based on race position to spread out drivers
+    /// </summary>
+    private double GetPositionBasedOffset(TimingDataPoint.Driver driver)
+    {
+        if (!driver.Line.HasValue) return 0.0;
+        
+        // Use race position to create small offsets that spread drivers around the track
+        // This prevents all drivers from clustering at the same sector positions
+        var position = driver.Line.Value;
+        
+        // Create a small offset based on position (max 0.15 of track circumference)
+        var maxOffset = 0.15;
+        var positionFactor = (position - 1) % 20; // Cycle through positions 0-19
+        var offset = (positionFactor / 20.0) * maxOffset;
+        
+        return offset;
     }
 
     /// <summary>
@@ -95,8 +128,14 @@ public class CircularTrackPositionCalculator
     private double ConvertProgressToAngle(double progress)
     {
         // Convert progress to angle, with 0 degrees at the top (12 o'clock position)
-        // Progress 0.0 = 0°, Progress 0.25 = 90°, Progress 0.5 = 180°, etc.
-        var angle = progress * 360.0;
+        // Add some randomization to prevent all drivers from being at exact same positions
+        var baseAngle = progress * 360.0;
+        
+        // Add a small random offset based on some driver characteristic to spread them out
+        // This helps prevent clustering at sector boundaries
+        var offset = (progress * 1000) % 10 - 5; // Small offset between -5 and +5 degrees
+        
+        var angle = baseAngle + offset;
         
         // Ensure angle is within 0-360 range
         while (angle >= 360.0) angle -= 360.0;
