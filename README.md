@@ -1,7 +1,7 @@
 <!-- omit in toc -->
 # undercut-f1-enhanced
 
-**Enhanced fork of undercut-f1 with pit stop projections and improved Circle of Doom**
+**Enhanced fork of undercut-f1 with pit stop projections and text-based version of the Circle of Doom**
 
 This is a fork of the excellent [undercut-f1](https://github.com/JustAman62/undercut-f1) project by JustAman62, enhanced with additional pit stop strategy visualization features.
 
@@ -16,7 +16,6 @@ This is a fork of the excellent [undercut-f1](https://github.com/JustAman62/unde
 
 ![Driver Tracker with Pit Projections](docs/screenshots/driver-tracker-pit-projections.png)
 
-![Driver Tracker with Pit Projections](docs/screenshots/driver-tracker-pit-projections.png)
 
 ### **Simplified Circle of Doom**
 - Clean text-based pit strategy analysis with driver status overview
@@ -26,7 +25,6 @@ This is a fork of the excellent [undercut-f1](https://github.com/JustAman62/unde
 
 ![Circle of Doom Enhanced](docs/screenshots/circle-of-doom-enhanced.png)
 
-![Circle of Doom Enhanced](docs/screenshots/circle-of-doom-enhanced.png)
 
 ## 🎯 **Key Improvements:**
 
