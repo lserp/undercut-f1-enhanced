@@ -372,9 +372,10 @@
 
                     // Debug logging
                     if (this.drivers.length > 0) {
-                        console.log('Driver positions:', this.drivers.slice(0, 3).map(d => ({
+                        console.log('Driver positions:', this.drivers.slice(0, 5).map(d => ({
                             driver: d.driverTla,
-                            position: d.racePosition,
+                            racePos: `P${d.racePosition}`,
+                            gap: d.gapToLeader,
                             angle: d.position.angle.toFixed(1),
                             progress: d.position.trackProgress.toFixed(3)
                         })));
@@ -456,15 +457,15 @@
 
             applyCollisionAvoidance(drivers) {
                 const adjustedDrivers = [];
-                const minDistance = 25; // Minimum distance between drivers in pixels
+                const minDistance = 20; // Minimum distance between drivers in pixels
                 
-                // Sort drivers by their original angle to process them in order
-                const sortedDrivers = [...drivers].sort((a, b) => a.position.angle - b.position.angle);
+                // Sort drivers by race position to maintain proper order
+                const sortedDrivers = [...drivers].sort((a, b) => a.racePosition - b.racePosition);
                 
                 sortedDrivers.forEach(driver => {
                     let adjustedAngle = driver.position.angle;
                     let attempts = 0;
-                    const maxAttempts = 10;
+                    const maxAttempts = 15;
                     
                     // Check for collisions with already placed drivers
                     while (attempts < maxAttempts) {
@@ -477,8 +478,11 @@
                             );
                             
                             if (distance < minDistance) {
-                                // Adjust angle to avoid collision
-                                adjustedAngle += 8; // Move 8 degrees
+                                // For drivers close in race position, spread them around more carefully
+                                const positionDiff = Math.abs(driver.racePosition - placedDriver.racePosition);
+                                const adjustment = positionDiff <= 3 ? 6 : 10; // Smaller adjustment for close drivers
+                                
+                                adjustedAngle += adjustment;
                                 if (adjustedAngle >= 360) adjustedAngle -= 360;
                                 hasCollision = true;
                                 break;

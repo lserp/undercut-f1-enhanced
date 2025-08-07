@@ -32,67 +32,90 @@ public class CircularTrackPositionCalculator
     }
 
     /// <summary>
-    /// Calculates track progress (0.0-1.0) based on race position and sector completion
+    /// Calculates track progress (0.0-1.0) based on race position and gaps
+    /// This creates a realistic representation where faster drivers are ahead
     /// </summary>
     /// <param name="driver">Driver timing data</param>
     /// <returns>Progress through current lap (0.0 = start, 1.0 = complete)</returns>
     public double GetTrackProgress(TimingDataPoint.Driver driver)
     {
-        // Start with sector-based progress
-        var sectorProgress = GetSectorBasedProgress(driver);
+        if (!driver.Line.HasValue) return 0.5; // Default middle position
         
-        // Add fine-grained positioning based on race position
-        var positionOffset = GetPositionBasedOffset(driver);
+        var racePosition = driver.Line.Value;
         
-        // Combine both for smoother positioning
-        var combinedProgress = sectorProgress + positionOffset;
+        // Base the track position primarily on race position
+        // Leader (P1) gets position near 0.9 (almost complete lap)
+        // Last place gets position near 0.1 (start of lap)
+        var baseProgress = CalculateProgressFromRacePosition(racePosition);
+        
+        // Add gap-based fine-tuning for more accuracy
+        var gapAdjustment = CalculateGapBasedAdjustment(driver);
+        
+        // Combine both for realistic positioning
+        var totalProgress = baseProgress + gapAdjustment;
         
         // Ensure we stay within bounds
-        return Math.Clamp(combinedProgress, 0.01, 0.99);
+        return Math.Clamp(totalProgress, 0.05, 0.95);
     }
 
     /// <summary>
-    /// Gets basic progress based on sector completion
+    /// Calculates base progress from race position
     /// </summary>
-    private double GetSectorBasedProgress(TimingDataPoint.Driver driver)
+    private double CalculateProgressFromRacePosition(int racePosition)
     {
-        if (driver.Sectors == null || driver.Sectors.Count == 0)
-        {
-            return 0.1; // Default start position
-        }
-
-        // Check sector completion (sectors are keyed as "0", "1", "2")
-        var sector1Complete = !string.IsNullOrWhiteSpace(driver.Sectors.GetValueOrDefault("0")?.Value);
-        var sector2Complete = !string.IsNullOrWhiteSpace(driver.Sectors.GetValueOrDefault("1")?.Value);
-        var sector3Complete = !string.IsNullOrWhiteSpace(driver.Sectors.GetValueOrDefault("2")?.Value);
-
-        return (sector1Complete, sector2Complete, sector3Complete) switch
-        {
-            (false, false, false) => 0.1,  // Start of lap
-            (true, false, false) => 0.35,  // After sector 1
-            (true, true, false) => 0.65,   // After sector 2
-            (true, true, true) => 0.9,     // After sector 3
-            _ => 0.1
-        };
+        // Distribute 20 drivers around the track based on position
+        // P1 = ~90% around track, P20 = ~10% around track
+        var maxPosition = 20.0;
+        var minProgress = 0.1;  // 10% around track (start area)
+        var maxProgress = 0.9;  // 90% around track (near finish)
+        
+        // Invert position so P1 gets highest progress
+        var normalizedPosition = (maxPosition - racePosition + 1) / maxPosition;
+        
+        // Map to progress range
+        return minProgress + (normalizedPosition * (maxProgress - minProgress));
     }
 
     /// <summary>
-    /// Gets fine-grained offset based on race position to spread out drivers
+    /// Calculates fine adjustment based on gap to leader
     /// </summary>
-    private double GetPositionBasedOffset(TimingDataPoint.Driver driver)
+    private double CalculateGapBasedAdjustment(TimingDataPoint.Driver driver)
     {
-        if (!driver.Line.HasValue) return 0.0;
+        var gapString = driver.GapToLeader;
+        if (string.IsNullOrEmpty(gapString)) return 0.0;
         
-        // Use race position to create small offsets that spread drivers around the track
-        // This prevents all drivers from clustering at the same sector positions
-        var position = driver.Line.Value;
+        // Parse gap to leader
+        var gapSeconds = ParseGapToSeconds(gapString);
+        if (!gapSeconds.HasValue) return 0.0;
         
-        // Create a small offset based on position (max 0.15 of track circumference)
-        var maxOffset = 0.15;
-        var positionFactor = (position - 1) % 20; // Cycle through positions 0-19
-        var offset = (positionFactor / 20.0) * maxOffset;
+        // Convert gap to track position adjustment
+        // Assume ~90 seconds for a full lap (typical F1 lap time)
+        var typicalLapTime = 90.0;
+        var gapAsLapFraction = gapSeconds.Value / typicalLapTime;
         
-        return offset;
+        // Limit adjustment to prevent unrealistic positions
+        var maxAdjustment = 0.1; // Max 10% of track
+        var adjustment = Math.Clamp(-gapAsLapFraction, -maxAdjustment, maxAdjustment);
+        
+        return adjustment;
+    }
+
+    /// <summary>
+    /// Parses gap string to seconds
+    /// </summary>
+    private double? ParseGapToSeconds(string gapString)
+    {
+        if (string.IsNullOrEmpty(gapString)) return null;
+        
+        // Handle different gap formats
+        if (gapString.StartsWith("LAP")) return 0.0; // Leader
+        if (gapString.EndsWith("L")) return null; // Lapped drivers - ignore for now
+        
+        // Parse time gaps like "+1.234" or "1.234"
+        var cleanGap = gapString.TrimStart('+');
+        return double.TryParse(cleanGap, out var seconds) ? seconds : null;
+        
+        return null;
     }
 
     /// <summary>

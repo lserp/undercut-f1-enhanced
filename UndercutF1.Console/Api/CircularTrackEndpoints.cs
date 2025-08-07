@@ -40,7 +40,13 @@ public static class CircularTrackEndpoints
             var leaderLap = GetLeaderLap(timingData, lapCount);
             var positions = new List<object>();
 
-            foreach (var (driverNumber, timingLine) in timingData.Latest.Lines)
+            // Get all drivers and sort by race position for consistent ordering
+            var sortedDrivers = timingData.Latest.Lines
+                .Where(kvp => kvp.Value.Line.HasValue)
+                .OrderBy(kvp => kvp.Value.Line.Value)
+                .ToList();
+
+            foreach (var (driverNumber, timingLine) in sortedDrivers)
             {
                 var driver = driverList?.Latest?.GetValueOrDefault(driverNumber);
                 if (driver == null) continue;
@@ -73,13 +79,24 @@ public static class CircularTrackEndpoints
                     bestLapTime = timingLine.BestLapTime?.Value ?? "",
                     inPit = timingLine.InPit ?? false,
                     pitOut = timingLine.PitOut ?? false,
-                    numberOfPitStops = timingLine.NumberOfPitStops ?? 0
+                    numberOfPitStops = timingLine.NumberOfPitStops ?? 0,
+                    // Add debug info
+                    debugInfo = new
+                    {
+                        rawGap = timingLine.GapToLeader,
+                        calculatedProgress = circularPosition.TrackProgress,
+                        calculatedAngle = circularPosition.Angle
+                    }
                 };
 
                 positions.Add(driverPosition);
             }
 
-            return Results.Ok(new { drivers = positions.OrderBy(p => ((dynamic)p).racePosition) });
+            return Results.Ok(new { 
+                drivers = positions,
+                totalDrivers = positions.Count,
+                timestamp = DateTime.UtcNow
+            });
         }
         catch (Exception ex)
         {
