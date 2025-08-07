@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>F1 Circular Track Visualization</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap');
+
         * {
             margin: 0;
             padding: 0;
@@ -12,8 +15,11 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            font-family: 'Titillium Web', 'Formula1 Display', 'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(255, 30, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
             color: white;
             overflow: hidden;
         }
@@ -41,17 +47,29 @@
             transform: translateX(-50%);
             text-align: center;
             z-index: 10;
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 20, 0.8));
+            padding: 16px 32px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 30, 0, 0.3);
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
         .session-title {
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .session-info {
-            font-size: 16px;
-            opacity: 0.8;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .track-svg {
@@ -63,55 +81,84 @@
 
         .track-circle {
             fill: none;
-            stroke: #ffffff;
-            stroke-width: 8;
-            opacity: 0.8;
+            stroke: url(#trackGradient);
+            stroke-width: 12;
+            opacity: 1;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
         }
 
         .track-inner {
             fill: none;
-            stroke: #cccccc;
-            stroke-width: 2;
+            stroke: #2a2a2a;
+            stroke-width: 1;
             opacity: 0.6;
+            stroke-dasharray: 3, 3;
         }
 
         .start-finish-line {
-            stroke: #ffff00;
-            stroke-width: 6;
+            stroke: url(#startFinishGradient);
+            stroke-width: 8;
             stroke-linecap: round;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
         }
 
         .start-finish-text {
-            fill: #ffff00;
-            font-size: 14px;
-            font-weight: bold;
+            fill: url(#textGradient);
+            font-size: 18px;
+            font-weight: 900;
+            font-family: 'Titillium Web', 'Formula1 Display', 'Roboto Condensed', sans-serif;
+            letter-spacing: 1.5px;
             text-anchor: middle;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
         }
 
         .driver-dot {
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
         }
 
         .driver-dot:hover {
-            transform: scale(1.2);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8)) brightness(1.2);
+        }
+
+        .driver-dot[data-drs="true"] {
+            filter: drop-shadow(0 0 6px #00ff00) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+            animation: drs-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes drs-pulse {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 6px #00ff00) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 12px #00ff00) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+            }
         }
 
         .driver-number {
-            fill: white;
-            font-size: 10px;
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 900;
+            font-family: 'Titillium Web', 'Formula1 Display', 'Roboto Condensed', sans-serif;
+            letter-spacing: 0.5px;
             text-anchor: middle;
             pointer-events: none;
+            paint-order: stroke fill;
         }
 
         .info-panel {
-            width: 350px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 10px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 380px;
+            background: linear-gradient(145deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 20, 0.9));
+            border-radius: 16px;
+            padding: 28px;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 30, 0, 0.2);
+            box-shadow:
+                0 12px 40px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         .info-section {
@@ -119,12 +166,15 @@
         }
 
         .info-title {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             margin-bottom: 15px;
-            color: #00ff88;
-            border-bottom: 2px solid #00ff88;
-            padding-bottom: 5px;
+            color: #ff1e00;
+            border-bottom: 3px solid #ff1e00;
+            padding-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .driver-list {
@@ -135,22 +185,34 @@
         .driver-item {
             display: flex;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            transition: background-color 0.2s ease;
+        }
+
+        .driver-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin: 0 -8px;
+            padding: 10px 8px;
         }
 
         .driver-position {
-            font-weight: bold;
-            width: 30px;
+            font-weight: 900;
+            font-size: 16px;
+            letter-spacing: 0.5px;
+            width: 35px;
             text-align: center;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .driver-color {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            margin: 0 10px;
+            margin: 0 12px;
             border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .driver-info {
@@ -158,13 +220,17 @@
         }
 
         .driver-name {
-            font-weight: bold;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .driver-gap {
-            font-size: 12px;
-            opacity: 0.8;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0.85;
+            letter-spacing: 0.3px;
         }
 
         .session-stats {
@@ -175,21 +241,28 @@
 
         .stat-item {
             text-align: center;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
+            padding: 12px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.08));
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #00ff88;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: #ff1e00;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .stat-label {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-top: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            opacity: 0.85;
+            margin-top: 6px;
         }
 
         .status-indicator {
@@ -200,21 +273,31 @@
             margin-right: 5px;
         }
 
-        .status-live { background: #00ff00; }
-        .status-stale { background: #ffff00; }
-        .status-offline { background: #ff0000; }
+        .status-live {
+            background: #00ff00;
+        }
+
+        .status-stale {
+            background: #ffff00;
+        }
+
+        .status-offline {
+            background: #ff0000;
+        }
 
         .legend {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            font-size: 12px;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
         }
 
         .legend-symbol {
@@ -239,16 +322,92 @@
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .loading {
             animation: pulse 2s infinite;
         }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-button {
+            background: linear-gradient(145deg, #ff1e00, #cc1800);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-family: 'Titillium Web', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .control-button:hover {
+            background: linear-gradient(145deg, #ff3520, #ff1e00);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 30, 0, 0.3);
+        }
+
+        .control-button.active {
+            background: linear-gradient(145deg, #00ff88, #00cc6a);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        }
+
+        .control-button.active:hover {
+            background: linear-gradient(145deg, #20ff98, #00ff88);
+        }
+
+        .pitstop-arc {
+            fill: none;
+            stroke: url(#pitstopGradient);
+            stroke-width: 6;
+            stroke-dasharray: 8, 4;
+            opacity: 0.9;
+            filter: drop-shadow(0 2px 6px rgba(255, 100, 0, 0.4));
+            animation: dash 3s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -24;
+            }
+        }
+
+        .instructions {
+            font-size: 12px;
+            color: #cccccc;
+            font-style: italic;
+            text-align: center;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .drs-indicator {
+            filter: drop-shadow(0 2px 4px rgba(0, 255, 0, 0.6)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+        }
     </style>
 </head>
+
 <body>
     <div id="loading" class="loading">
         🏎️ Loading F1 Circular Track Visualization...
@@ -260,18 +419,50 @@
                 <div class="session-title" id="sessionTitle">F1 Session</div>
                 <div class="session-info" id="sessionInfo">Loading...</div>
             </div>
-            
-            <svg class="track-svg" id="trackSvg" viewBox="0 0 400 400">
+
+            <svg class="track-svg" id="trackSvg" viewBox="0 0 500 500">
+                <!-- Gradient definitions for professional styling -->
+                <defs>
+                    <!-- Track gradient: asphalt-like appearance -->
+                    <linearGradient id="trackGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#4a4a4a;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#2a2a2a;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+                    </linearGradient>
+
+                    <!-- Start/Finish line gradient: F1 yellow with depth -->
+                    <linearGradient id="startFinishGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ffff00;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#ffd700;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ffaa00;stop-opacity:1" />
+                    </linearGradient>
+
+                    <!-- Text gradient for S/F -->
+                    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#ffff00;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ffd700;stop-opacity:1" />
+                    </linearGradient>
+
+                    <!-- Pitstop projection gradient: orange to red -->
+                    <linearGradient id="pitstopGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff6400;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#ff4500;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ff2200;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+
                 <!-- Track circle -->
-                <circle cx="200" cy="200" r="180" class="track-circle" />
-                <circle cx="200" cy="200" r="172" class="track-inner" />
-                
+                <circle cx="250" cy="250" r="225" class="track-circle" />
+                <circle cx="250" cy="250" r="217" class="track-inner" />
+
                 <!-- Start/Finish line -->
-                <line x1="200" y1="20" x2="200" y2="36" class="start-finish-line" />
-                <text x="200" y="15" class="start-finish-text">S/F</text>
-                
-                <!-- Drivers will be added here dynamically -->
-                <g id="driversGroup"></g>
+                <line x1="250" y1="25" x2="250" y2="41" class="start-finish-line" />
+                <text x="250" y="15" class="start-finish-text">S/F</text>
+
+                <!-- Layered groups for proper z-ordering -->
+                <g id="pitstopGroup"></g> <!-- Pitstop projections (bottom layer) -->
+                <g id="driversGroup"></g> <!-- Driver dots and text (top layer) -->
             </svg>
         </div>
 
@@ -309,6 +500,18 @@
             </div>
 
             <div class="info-section">
+                <div class="info-title">Controls</div>
+                <div class="controls">
+                    <button id="pitstopToggle" class="control-button">
+                        📊 Pitstop Projections
+                    </button>
+                    <div id="pitstopInstructions" class="instructions" style="display: none;">
+                        Click on a driver to see their pitstop projection
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
                 <div class="info-title">Legend</div>
                 <div class="legend">
                     <div class="legend-item">
@@ -327,6 +530,21 @@
                         <div class="legend-symbol" style="background: #ff0000;"></div>
                         <span>Retired</span>
                     </div>
+                    <div class="legend-item">
+                        <div style="display: flex; align-items: center; gap: 4px; position: relative;">
+                            <div class="legend-symbol" style="background: #ff1e00;"></div>
+                            <div
+                                style="width: 6px; height: 6px; background: #00ff00; border-radius: 50%; position: absolute; top: -2px; left: 16px;">
+                            </div>
+                        </div>
+                        <span>DRS Enabled</span>
+                    </div>
+                    <div class="legend-item">
+                        <div
+                            style="width: 20px; height: 2px; background: #ffaa00; border: 2px dashed #ffaa00; border-radius: 0;">
+                        </div>
+                        <span>Pitstop Projection</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -339,18 +557,38 @@
                 this.sessionInfo = {};
                 this.updateInterval = null;
                 this.isLoading = true;
-                
+                this.pitstopProjectionMode = false;
+                this.selectedDriverForPitstop = null;
+
                 this.init();
             }
 
             async init() {
                 try {
                     await this.loadData();
+                    this.setupEventHandlers();
                     this.startAutoUpdate();
                     this.showApp();
                 } catch (error) {
                     this.showError(error.message);
                 }
+            }
+
+            setupEventHandlers() {
+                // Pitstop projection toggle
+                const pitstopToggle = document.getElementById('pitstopToggle');
+                const instructions = document.getElementById('pitstopInstructions');
+
+                pitstopToggle.addEventListener('click', () => {
+                    this.pitstopProjectionMode = !this.pitstopProjectionMode;
+                    pitstopToggle.classList.toggle('active', this.pitstopProjectionMode);
+                    instructions.style.display = this.pitstopProjectionMode ? 'block' : 'none';
+
+                    if (!this.pitstopProjectionMode) {
+                        this.selectedDriverForPitstop = null;
+                        this.clearPitstopProjections();
+                    }
+                });
             }
 
             async loadData() {
@@ -399,14 +637,14 @@
             updateSessionHeader() {
                 const title = document.getElementById('sessionTitle');
                 const info = document.getElementById('sessionInfo');
-                
+
                 const sessionName = this.sessionInfo.sessionName || 'F1 Session';
                 const meetingName = this.sessionInfo.meetingName || '';
                 const currentLap = this.sessionInfo.currentLap || 0;
                 const totalLaps = this.sessionInfo.totalLaps || 0;
 
                 title.textContent = `${sessionName}${meetingName ? ' - ' + meetingName : ''}`;
-                
+
                 if (totalLaps > 0) {
                     info.textContent = `Lap ${currentLap} of ${totalLaps}`;
                 } else {
@@ -415,90 +653,236 @@
             }
 
             updateDriverPositions() {
-                const driversGroup = document.getElementById('driversGroup');
-                driversGroup.innerHTML = '';
+                try {
+                    const driversGroup = document.getElementById('driversGroup');
+                    if (!driversGroup) {
+                        console.error('driversGroup element not found');
+                        return;
+                    }
 
-                // Apply collision avoidance to prevent overlapping
-                const adjustedDrivers = this.applyCollisionAvoidance(this.drivers);
-
-                adjustedDrivers.forEach(driver => {
-                    const angle = (driver.adjustedAngle - 90) * Math.PI / 180; // -90 to start at top
-                    const radius = 180 * driver.position.radialPosition;
+                    // Apply collision avoidance to prevent overlapping
+                    const adjustedDrivers = this.applyCollisionAvoidance(this.drivers);
                     
-                    const x = 200 + radius * Math.cos(angle);
-                    const y = 200 + radius * Math.sin(angle);
+                    // Store adjusted drivers for pitstop projections
+                    this.adjustedDrivers = adjustedDrivers;
 
-                    // Create driver dot
-                    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                    dot.setAttribute('cx', x);
-                    dot.setAttribute('cy', y);
-                    dot.setAttribute('r', '8');
-                    dot.setAttribute('fill', `#${driver.teamColor}`);
-                    dot.setAttribute('stroke', 'white');
-                    dot.setAttribute('stroke-width', '2');
-                    dot.setAttribute('class', 'driver-dot');
-                    dot.setAttribute('data-driver', driver.driverNumber);
+                    // Get existing driver elements
+                    const existingDots = new Map();
+                    const existingTexts = new Map();
+                    const existingDrsIndicators = new Map();
 
-                    // Create driver number text
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('x', x);
-                    text.setAttribute('y', y + 3);
-                    text.setAttribute('class', 'driver-number');
-                    text.textContent = driver.driverNumber;
+                    // Collect existing elements by driver number
+                    Array.from(driversGroup.children).forEach(element => {
+                        const driverNumber = element.getAttribute('data-driver');
+                        if (driverNumber) {
+                            if (element.tagName === 'circle' && element.classList.contains('driver-dot')) {
+                                existingDots.set(driverNumber, element);
+                            } else if (element.tagName === 'circle' && element.classList.contains('drs-indicator')) {
+                                existingDrsIndicators.set(driverNumber, element);
+                            } else if (element.tagName === 'text') {
+                                existingTexts.set(driverNumber, element);
+                            }
+                        }
+                    });
 
-                    // Add hover effects
-                    dot.addEventListener('mouseenter', () => this.showDriverTooltip(driver, x, y));
-                    dot.addEventListener('mouseleave', () => this.hideDriverTooltip());
+                    // Track which drivers we've processed
+                    const processedDrivers = new Set();
 
-                    driversGroup.appendChild(dot);
-                    driversGroup.appendChild(text);
-                });
+                    adjustedDrivers.forEach(driver => {
+                        const angle = (driver.adjustedAngle - 90) * Math.PI / 180; // -90 to start at top
+                        const radius = 225; // Use full radius to place drivers on the track circle
+
+                        const x = 250 + radius * Math.cos(angle);
+                        const y = 250 + radius * Math.sin(angle);
+                        
+                        // Debug logging for specific drivers
+                        if (driver.driverNumber === '1' || driver.driverNumber === '87' || driver.driverNumber === '3') {
+                            console.log(`Driver ${driver.driverNumber} positioned at:`);
+                            console.log(`Original angle: ${driver.position?.angle}`);
+                            console.log(`Adjusted angle: ${driver.adjustedAngle}`);
+                            console.log(`Visual position: (${x.toFixed(1)}, ${y.toFixed(1)})`);
+                        }
+
+                        // Check if driver is lapped
+                        const isLapped = driver.position.radialPosition < 1.0;
+                        const dotSize = isLapped ? 8 : 10; // 25% bigger dots (was 6:8, now 8:10)
+                        const opacity = isLapped ? 0.7 : 1.0; // More transparent for lapped drivers
+
+                        // Check if driver is in DRS range (within 1 second of car ahead)
+                        const isDrsEnabled = this.isDriverInDrsRange(driver, adjustedDrivers);
+
+                        const teamColor = driver.teamColor;
+
+                        // Use solid dots - simple and clean
+                        const dotAttributes = {
+                            cx: x,
+                            cy: y,
+                            r: dotSize,
+                            fill: `#${teamColor}`,
+                            opacity: isLapped ? 0.7 : 0.9
+                        };
+
+                        // Update or create driver dot
+                        let dot = existingDots.get(driver.driverNumber);
+                        if (dot) {
+                            // Update existing dot - set all attributes to ensure consistency
+                            Object.entries(dotAttributes).forEach(([attr, value]) => {
+                                dot.setAttribute(attr, value);
+                            });
+                        } else {
+                            // Create new driver dot
+                            dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+
+                            // Set all attributes including class and data attributes
+                            Object.entries(dotAttributes).forEach(([attr, value]) => {
+                                dot.setAttribute(attr, value);
+                            });
+                            dot.setAttribute('class', 'driver-dot');
+                            dot.setAttribute('data-driver', driver.driverNumber);
+
+                            // Add hover effects and click handler
+                            dot.addEventListener('mouseenter', () => this.showDriverTooltip(driver, x, y));
+                            dot.addEventListener('mouseleave', () => this.hideDriverTooltip());
+                            dot.addEventListener('click', () => this.handleDriverClickByNumber(driver.driverNumber));
+
+                            driversGroup.appendChild(dot);
+                        }
+
+                        // Calculate the best contrast color for the text
+                        const textColor = this.getContrastColor(teamColor);
+
+                        // Define text attributes upfront
+                        const textAttributes = {
+                            x: x,
+                            y: y + 3,
+                            fill: `#${textColor}`,
+                            stroke: `#${textColor === 'ffffff' ? '000000' : 'ffffff'}`,
+                            'stroke-width': '0.5'
+                        };
+
+                        // Update or create driver number text
+                        let text = existingTexts.get(driver.driverNumber);
+                        if (text) {
+                            // Update existing text
+                            Object.entries(textAttributes).forEach(([attr, value]) => {
+                                text.setAttribute(attr, value);
+                            });
+                            text.textContent = driver.driverNumber;
+                        } else {
+                            // Create new driver number text
+                            text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+
+                            Object.entries(textAttributes).forEach(([attr, value]) => {
+                                text.setAttribute(attr, value);
+                            });
+                            text.setAttribute('class', 'driver-number');
+                            text.setAttribute('data-driver', driver.driverNumber);
+                            text.textContent = driver.driverNumber;
+
+                            driversGroup.appendChild(text);
+                        }
+
+                        // Handle DRS indicator dot
+                        const existingDrsIndicator = existingDrsIndicators.get(driver.driverNumber);
+
+                        if (isDrsEnabled) {
+                            // Position the DRS indicator to avoid overlapping with driver number
+                            const drsOffsetX = 8; // Offset further to the right
+                            const drsOffsetY = -8; // Offset further upward (away from number at y+3)
+                            const drsX = x + drsOffsetX;
+                            const drsY = y + drsOffsetY;
+
+                            if (existingDrsIndicator) {
+                                // Update existing DRS indicator
+                                existingDrsIndicator.setAttribute('cx', drsX);
+                                existingDrsIndicator.setAttribute('cy', drsY);
+                            } else {
+                                // Create new DRS indicator
+                                const drsIndicator = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                                drsIndicator.setAttribute('cx', drsX);
+                                drsIndicator.setAttribute('cy', drsY);
+                                drsIndicator.setAttribute('r', '3');
+                                drsIndicator.setAttribute('fill', '#00ff00');
+                                drsIndicator.setAttribute('class', 'drs-indicator');
+                                drsIndicator.setAttribute('data-driver', driver.driverNumber);
+
+                                driversGroup.appendChild(drsIndicator);
+                            }
+                        } else if (existingDrsIndicator) {
+                            // Remove DRS indicator if driver no longer has DRS
+                            existingDrsIndicator.remove();
+                        }
+
+                        processedDrivers.add(driver.driverNumber);
+                    });
+
+                    // Remove elements for drivers that are no longer present
+                    existingDots.forEach((dot, driverNumber) => {
+                        if (!processedDrivers.has(driverNumber)) {
+                            dot.remove();
+                        }
+                    });
+
+                    existingTexts.forEach((text, driverNumber) => {
+                        if (!processedDrivers.has(driverNumber)) {
+                            text.remove();
+                        }
+                    });
+
+                    existingDrsIndicators.forEach((indicator, driverNumber) => {
+                        if (!processedDrivers.has(driverNumber)) {
+                            indicator.remove();
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error updating driver positions:', error);
+                }
             }
 
             applyCollisionAvoidance(drivers) {
                 const adjustedDrivers = [];
                 const minDistance = 20; // Minimum distance between drivers in pixels
-                
+
                 // Sort drivers by race position to maintain proper order
                 const sortedDrivers = [...drivers].sort((a, b) => a.racePosition - b.racePosition);
-                
+
                 sortedDrivers.forEach(driver => {
                     let adjustedAngle = driver.position.angle;
                     let attempts = 0;
                     const maxAttempts = 15;
-                    
+
                     // Check for collisions with already placed drivers
                     while (attempts < maxAttempts) {
                         let hasCollision = false;
-                        
+
                         for (const placedDriver of adjustedDrivers) {
                             const distance = this.calculateDistance(
                                 adjustedAngle, driver.position.radialPosition,
                                 placedDriver.adjustedAngle, placedDriver.position.radialPosition
                             );
-                            
+
                             if (distance < minDistance) {
                                 // For drivers close in race position, spread them around more carefully
                                 const positionDiff = Math.abs(driver.racePosition - placedDriver.racePosition);
                                 const adjustment = positionDiff <= 3 ? 6 : 10; // Smaller adjustment for close drivers
-                                
+
                                 adjustedAngle += adjustment;
                                 if (adjustedAngle >= 360) adjustedAngle -= 360;
                                 hasCollision = true;
                                 break;
                             }
                         }
-                        
+
                         if (!hasCollision) break;
                         attempts++;
                     }
-                    
+
                     adjustedDrivers.push({
                         ...driver,
                         adjustedAngle: adjustedAngle
                     });
                 });
-                
+
                 return adjustedDrivers;
             }
 
@@ -506,15 +890,204 @@
                 // Convert angles to radians
                 const rad1 = (angle1 - 90) * Math.PI / 180;
                 const rad2 = (angle2 - 90) * Math.PI / 180;
-                
-                // Calculate positions
-                const x1 = 180 * radius1 * Math.cos(rad1);
-                const y1 = 180 * radius1 * Math.sin(rad1);
-                const x2 = 180 * radius2 * Math.cos(rad2);
-                const y2 = 180 * radius2 * Math.sin(rad2);
-                
+
+                // Calculate positions - use full radius for all drivers on track circle
+                const x1 = 225 * Math.cos(rad1);
+                const y1 = 225 * Math.sin(rad1);
+                const x2 = 225 * Math.cos(rad2);
+                const y2 = 225 * Math.sin(rad2);
+
                 // Return Euclidean distance
                 return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            }
+
+            darkenColor(hexColor, factor) {
+                // Remove # if present
+                const hex = hexColor.replace('#', '');
+
+                // Parse RGB components
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+
+                // Darken each component
+                const newR = Math.floor(r * (1 - factor));
+                const newG = Math.floor(g * (1 - factor));
+                const newB = Math.floor(b * (1 - factor));
+
+                // Convert back to hex
+                return ((newR << 16) | (newG << 8) | newB).toString(16).padStart(6, '0');
+            }
+
+            getContrastColor(hexColor) {
+                // Remove # if present
+                const hex = hexColor.replace('#', '');
+
+                // Parse RGB components
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+
+                // Calculate luminance
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+                // Return black for light colors, white for dark colors
+                return luminance > 0.5 ? '000000' : 'ffffff';
+            }
+
+            isDriverInDrsRange(driver, allDrivers) {
+                // Find the driver directly ahead in race position
+                const driverAhead = allDrivers.find(d => d.racePosition === driver.racePosition - 1);
+                if (!driverAhead) return false;
+
+                // Parse gap to leader to determine if within DRS range (1 second)
+                const gap = this.parseGapToSeconds(driver.gapToLeader);
+                const gapAhead = this.parseGapToSeconds(driverAhead.gapToLeader);
+
+                if (gap === null || gapAhead === null) return false;
+
+                // Calculate gap between this driver and the one ahead
+                const gapBetween = gap - gapAhead;
+                return gapBetween <= 1.0; // Within 1 second = DRS enabled
+            }
+
+            parseGapToSeconds(gapString) {
+                if (!gapString || gapString === 'LAP') return 0;
+                if (gapString.endsWith('L')) return null; // Lapped drivers
+
+                const cleanGap = gapString.replace('+', '');
+                const seconds = parseFloat(cleanGap);
+                return isNaN(seconds) ? null : seconds;
+            }
+
+            handleDriverClickByNumber(driverNumber) {
+                if (!this.pitstopProjectionMode) return;
+
+                if (this.selectedDriverForPitstop === driverNumber) {
+                    // Deselect if clicking the same driver
+                    this.selectedDriverForPitstop = null;
+                    this.clearPitstopProjections();
+                } else {
+                    // Select new driver and show projection
+                    this.selectedDriverForPitstop = driverNumber;
+                    
+                    // Find the adjusted driver data from the stored adjustedDrivers
+                    const adjustedDriver = this.adjustedDrivers?.find(d => d.driverNumber === driverNumber);
+                    const originalDriver = this.drivers?.find(d => d.driverNumber === driverNumber);
+                    
+                    // Debug logging
+                    console.log(`Clicked driver ${driverNumber}:`);
+                    console.log(`Original driver:`, originalDriver);
+                    console.log(`Adjusted driver:`, adjustedDriver);
+                    console.log(`Original angle: ${originalDriver?.position?.angle}`);
+                    console.log(`Adjusted angle: ${adjustedDriver?.adjustedAngle}`);
+                    
+                    if (adjustedDriver) {
+                        this.showPitstopProjection(adjustedDriver);
+                    } else {
+                        console.error(`Could not find adjusted driver data for ${driverNumber}`);
+                    }
+                }
+            }
+
+            // Keep the old method for backward compatibility
+            handleDriverClick(driver) {
+                return this.handleDriverClickByNumber(driver.driverNumber);
+            }
+
+            showPitstopProjection(driver) {
+                this.clearPitstopProjections();
+
+                // Estimate pitstop time (typically 20-25 seconds)
+                const pitstopTime = 22; // seconds
+
+                // Convert pitstop time to track position
+                // Assuming ~90 second lap time, pitstop time represents this fraction of a lap
+                const typicalLapTime = 90;
+                const pitstopFraction = pitstopTime / typicalLapTime;
+
+                // Calculate where driver would emerge after pitstop
+                // During pitstop, the driver loses time and falls back in race order
+                // Since drivers are positioned clockwise, falling back in race order means moving further clockwise
+                // Use adjustedAngle if available (after collision avoidance), otherwise use original angle
+                const currentAngle = driver.adjustedAngle !== undefined ? driver.adjustedAngle : driver.position.angle;
+                
+                // Debug logging
+                console.log(`Pitstop projection for driver ${driver.driverNumber}:`);
+                console.log(`Using angle: ${currentAngle}`);
+                console.log(`Pitstop fraction: ${pitstopFraction}`);
+                console.log(`Angle adjustment: ${pitstopFraction * 360}`);
+                
+                let projectedAngle = (currentAngle + (pitstopFraction * 360)) % 360;
+
+                // Ensure angle is within 0-360 range
+                if (projectedAngle >= 360) projectedAngle -= 360;
+
+                // Draw arc from current position to projected position
+                this.drawPitstopArc(currentAngle, projectedAngle, driver);
+            }
+
+            drawPitstopArc(startAngle, endAngle, driver) {
+                const pitstopGroup = document.getElementById('pitstopGroup');
+                const radius = 225;
+                const centerX = 250;
+                const centerY = 250;
+
+                // Convert angles to radians
+                const startRad = (startAngle - 90) * Math.PI / 180;
+                const endRad = (endAngle - 90) * Math.PI / 180;
+
+                // Calculate arc path
+                const startX = centerX + radius * Math.cos(startRad);
+                const startY = centerY + radius * Math.sin(startRad);
+                const endX = centerX + radius * Math.cos(endRad);
+                const endY = centerY + radius * Math.sin(endRad);
+                
+                // Debug logging
+                console.log(`Drawing pitstop arc:`);
+                console.log(`Start angle: ${startAngle}, End angle: ${endAngle}`);
+                console.log(`Start position: (${startX.toFixed(1)}, ${startY.toFixed(1)})`);
+                console.log(`End position: (${endX.toFixed(1)}, ${endY.toFixed(1)})`);
+                
+
+                // Determine if we need a large arc and sweep direction
+                // Since we're going forward (clockwise), calculate accordingly
+                let angleDiff = endAngle - startAngle;
+                if (angleDiff < 0) angleDiff += 360;
+                const largeArcFlag = angleDiff > 180 ? 1 : 0;
+                const sweepFlag = 1; // Sweep clockwise (positive direction)
+
+                // Create SVG path for arc
+                const pathData = `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${endX} ${endY}`;
+
+                const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                arc.setAttribute('d', pathData);
+                arc.setAttribute('class', 'pitstop-arc');
+                arc.setAttribute('id', 'pitstop-projection');
+
+                pitstopGroup.appendChild(arc);
+
+                // Add projected position dot
+                const projectedDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                projectedDot.setAttribute('cx', endX);
+                projectedDot.setAttribute('cy', endY);
+                projectedDot.setAttribute('r', '8');
+                projectedDot.setAttribute('fill', `#${driver.teamColor}`);
+                projectedDot.setAttribute('stroke', '#ffaa00');
+                projectedDot.setAttribute('stroke-width', '2');
+                projectedDot.setAttribute('opacity', '0.8');
+                projectedDot.setAttribute('id', 'projected-position');
+
+                pitstopGroup.appendChild(projectedDot);
+            }
+
+            clearPitstopProjections() {
+                const pitstopGroup = document.getElementById('pitstopGroup');
+                const existingArc = document.getElementById('pitstop-projection');
+                const existingDot = document.getElementById('projected-position');
+
+                if (existingArc) existingArc.remove();
+                if (existingDot) existingDot.remove();
             }
 
             updateDriverList() {
@@ -527,7 +1100,7 @@
                     .forEach(driver => {
                         const item = document.createElement('div');
                         item.className = 'driver-item';
-                        
+
                         item.innerHTML = `
                             <div class="driver-position">P${driver.racePosition}</div>
                             <div class="driver-color" style="background-color: #${driver.teamColor}"></div>
@@ -536,7 +1109,7 @@
                                 <div class="driver-gap">${driver.gapToLeader || 'Leader'}</div>
                             </div>
                         `;
-                        
+
                         driverList.appendChild(item);
                     });
             }
@@ -551,7 +1124,7 @@
             updateStatusIndicator() {
                 const indicator = document.getElementById('statusIndicator');
                 const hasData = this.drivers.length > 0;
-                
+
                 if (hasData) {
                     indicator.className = 'status-indicator status-live';
                 } else {
@@ -602,4 +1175,5 @@
         });
     </script>
 </body>
+
 </html>

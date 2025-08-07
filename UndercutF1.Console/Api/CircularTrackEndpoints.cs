@@ -54,7 +54,21 @@ public static class CircularTrackEndpoints
                 // Skip retired or knocked out drivers
                 if (timingLine.Retired == true || timingLine.KnockedOut == true) continue;
 
-                var circularPosition = positionCalculator.CalculatePosition(timingLine, currentLap, leaderLap);
+                // Use simple leader-at-12-o'clock positioning
+                var angle = positionCalculator.GetSimpleTrackAngle(timingLine, 
+                    timingData.Latest.Lines.Values);
+                var radialPosition = positionCalculator.CalculateRadialPosition(
+                    timingLine.NumberOfLaps ?? currentLap, leaderLap);
+                var trackProgress = angle / 360.0; // Convert angle back to progress for compatibility
+                
+                var circularPosition = new CircularPosition
+                {
+                    Angle = angle,
+                    RadialPosition = radialPosition,
+                    LapNumber = timingLine.NumberOfLaps ?? currentLap,
+                    TrackProgress = trackProgress
+                };
+                
                 var status = positionCalculator.GetDriverStatus(timingLine);
 
                 var driverPosition = new

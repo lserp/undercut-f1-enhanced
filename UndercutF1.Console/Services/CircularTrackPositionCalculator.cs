@@ -59,6 +59,67 @@ public class CircularTrackPositionCalculator
     }
 
     /// <summary>
+    /// Calculates track position using simple leader-at-12-o'clock approach
+    /// Leader is at 0°, following drivers positioned counter-clockwise based on gaps
+    /// </summary>
+    /// <param name="driver">Current driver</param>
+    /// <param name="allDrivers">All drivers in the session</param>
+    /// <returns>Angle in degrees (0° = 12 o'clock, increases counter-clockwise)</returns>
+    public double GetSimpleTrackAngle(TimingDataPoint.Driver driver, IEnumerable<TimingDataPoint.Driver> allDrivers)
+    {
+        if (!driver.Line.HasValue) return 180.0; // Default to 6 o'clock if no position
+        
+        var racePosition = driver.Line.Value;
+        
+        // Leader is always at 12 o'clock (0 degrees)
+        if (racePosition == 1) return 0.0;
+        
+        var driversByPosition = allDrivers
+            .Where(d => d.Line.HasValue)
+            .OrderBy(d => d.Line.Value)
+            .ToList();
+        
+        if (!driversByPosition.Any()) return 180.0;
+        
+        var currentAngle = 0.0; // Start at 12 o'clock for leader
+        
+        // Calculate cumulative angles based on gaps to car ahead
+        for (var i = 1; i < driversByPosition.Count; i++)
+        {
+            var currentDriver = driversByPosition[i];
+            var driverAhead = driversByPosition[i - 1];
+            
+            // Calculate gap between consecutive drivers
+            var gapToAhead = CalculateGapBetweenConsecutiveDrivers(currentDriver, driverAhead);
+            
+            // Convert gap to degrees (assume 3 seconds = ~30 degrees for good spacing)
+            var angleIncrement = Math.Clamp(gapToAhead * 10.0, 5.0, 45.0); // 5-45 degrees per gap
+            currentAngle += angleIncrement;
+            
+            if (currentDriver.Line == driver.Line)
+            {
+                return currentAngle % 360.0; // Ensure we stay within 0-360
+            }
+        }
+        
+        return currentAngle % 360.0;
+    }
+
+    /// <summary>
+    /// Calculates the gap between two consecutive drivers in race order
+    /// </summary>
+    private double CalculateGapBetweenConsecutiveDrivers(TimingDataPoint.Driver driver, TimingDataPoint.Driver driverAhead)
+    {
+        var driverGap = ParseGapToSeconds(driver.GapToLeader);
+        var aheadGap = ParseGapToSeconds(driverAhead.GapToLeader);
+        
+        if (driverGap == null || aheadGap == null) return 2.0; // Default 2 second gap
+        
+        var gapBetween = driverGap.Value - aheadGap.Value;
+        return Math.Max(gapBetween, 0.1); // Minimum 0.1 second gap
+    }
+
+    /// <summary>
     /// Calculates base progress from race position
     /// </summary>
     private double CalculateProgressFromRacePosition(int racePosition)
@@ -103,7 +164,7 @@ public class CircularTrackPositionCalculator
     /// <summary>
     /// Parses gap string to seconds
     /// </summary>
-    private double? ParseGapToSeconds(string gapString)
+    public double? ParseGapToSeconds(string gapString)
     {
         if (string.IsNullOrEmpty(gapString)) return null;
         
@@ -173,7 +234,7 @@ public class CircularTrackPositionCalculator
     /// <param name="driverLap">Driver's current lap</param>
     /// <param name="leaderLap">Leader's current lap</param>
     /// <returns>Radial position (1.0 = current lap, lower values = laps behind)</returns>
-    private double CalculateRadialPosition(int driverLap, int leaderLap)
+    public double CalculateRadialPosition(int driverLap, int leaderLap)
     {
         if (leaderLap <= 0) return 1.0; // No leader data, use default
 

@@ -157,9 +157,10 @@ public class CircularTrackGraphicsRenderer
         using var textPaint = new SKPaint
         {
             Color = SKColor.Parse("#ffff00"),
-            TextSize = 14,
+            TextSize = 16,
             IsAntialias = true,
-            Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyleWeight.Bold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
+            Typeface = SKTypeface.FromFamilyName("Titillium Web", SKFontStyleWeight.Black, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright) 
+                ?? SKTypeface.FromFamilyName("Arial", SKFontStyleWeight.Bold, SKFontStyleWidth.Condensed, SKFontStyleSlant.Upright)
         };
         
         canvas.DrawText("S/F", startX - 12, startY - 10, textPaint);
@@ -175,9 +176,9 @@ public class CircularTrackGraphicsRenderer
         
         foreach (var driver in positions)
         {
-            // Calculate position on circle
+            // Calculate position on circle - always place drivers ON the track circle
             var angle = (driver.Position.Angle - 90) * Math.PI / 180.0; // -90 to start at top
-            var radius = baseRadius * driver.Position.RadialPosition;
+            var radius = baseRadius; // Use full radius to place drivers on the track circle
             
             var x = (float)(center + radius * Math.Cos(angle));
             var y = (float)(center + radius * Math.Sin(angle));
@@ -185,38 +186,56 @@ public class CircularTrackGraphicsRenderer
             // Parse team color
             var teamColor = ParseTeamColor(driver.TeamColor);
             
-            // Draw driver dot
+            // Adjust visual appearance for lapped drivers
+            var isLapped = driver.Position.RadialPosition < 1.0;
+            var dotSize = isLapped ? DRIVER_DOT_SIZE * 0.8f : DRIVER_DOT_SIZE; // Smaller dots for lapped drivers
+            var opacity = isLapped ? 0.7f : 0.9f; // More transparent for lapped drivers
+            
+            // Draw solid driver dot (no border for simplicity)
             using var dotPaint = new SKPaint
             {
-                Color = teamColor,
+                Color = teamColor.WithAlpha((byte)(255 * opacity)),
                 Style = SKPaintStyle.Fill,
                 IsAntialias = true
             };
             
-            canvas.DrawCircle(x, y, DRIVER_DOT_SIZE / 2f, dotPaint);
+            canvas.DrawCircle(x, y, dotSize / 2f, dotPaint);
             
-            // Draw border around dot
-            using var borderPaint = new SKPaint
+            // Calculate the best contrast color for the text
+            var textColor = GetContrastColor(teamColor);
+            var strokeColor = textColor.Red > 128 ? SKColors.Black : SKColors.White;
+            
+            // Draw driver number with stroke for better readability
+            using var textStrokePaint = new SKPaint
             {
-                Color = SKColors.White,
-                Style = SKPaintStyle.Stroke,
-                StrokeWidth = 2,
-                IsAntialias = true
-            };
-            
-            canvas.DrawCircle(x, y, DRIVER_DOT_SIZE / 2f, borderPaint);
-            
-            // Draw driver number
-            using var textPaint = new SKPaint
-            {
-                Color = SKColors.White,
-                TextSize = 10,
+                Color = strokeColor,
+                TextSize = 11,
                 IsAntialias = true,
                 TextAlign = SKTextAlign.Center,
-                Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyleWeight.Bold, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 1,
+                Typeface = SKTypeface.FromFamilyName("Titillium Web", SKFontStyleWeight.Black, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright) 
+                    ?? SKTypeface.FromFamilyName("Arial", SKFontStyleWeight.Bold, SKFontStyleWidth.Condensed, SKFontStyleSlant.Upright)
             };
             
+            // Draw driver number fill
+            using var textPaint = new SKPaint
+            {
+                Color = textColor,
+                TextSize = 11,
+                IsAntialias = true,
+                TextAlign = SKTextAlign.Center,
+                Style = SKPaintStyle.Fill,
+                Typeface = SKTypeface.FromFamilyName("Titillium Web", SKFontStyleWeight.Black, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright) 
+                    ?? SKTypeface.FromFamilyName("Arial", SKFontStyleWeight.Bold, SKFontStyleWidth.Condensed, SKFontStyleSlant.Upright)
+            };
+            
+            // Draw text with stroke first, then fill for better readability
+            canvas.DrawText(driver.DriverNumber, x, y + 3, textStrokePaint);
             canvas.DrawText(driver.DriverNumber, x, y + 3, textPaint);
+            
+            // Note: DRS indicators are primarily handled in the web interface
+            // The graphics renderer focuses on the core visualization
         }
     }
 
@@ -242,14 +261,14 @@ public class CircularTrackGraphicsRenderer
             do
             {
                 hasCollision = false;
-                var radius = baseRadius * position.Position.RadialPosition;
+                var radius = baseRadius; // Use full radius to place drivers on the track circle
                 var angle = (adjustedAngle - 90) * Math.PI / 180.0;
                 var x = (float)(center + radius * Math.Cos(angle));
                 var y = (float)(center + radius * Math.Sin(angle));
                 
                 foreach (var placed in adjustedPositions)
                 {
-                    var placedRadius = baseRadius * placed.Position.RadialPosition;
+                    var placedRadius = baseRadius; // Use full radius for placed drivers too
                     var placedAngle = (placed.Position.Angle - 90) * Math.PI / 180.0;
                     var placedX = (float)(center + placedRadius * Math.Cos(placedAngle));
                     var placedY = (float)(center + placedRadius * Math.Sin(placedAngle));
@@ -424,6 +443,31 @@ public class CircularTrackGraphicsRenderer
         DriverStatus.Stopped => "🛑",
         _ => "🏎️"
     };
+
+    /// <summary>
+    /// Darkens a color by the specified factor
+    /// </summary>
+    private SKColor DarkenColor(SKColor color, float factor)
+    {
+        var r = (byte)(color.Red * (1 - factor));
+        var g = (byte)(color.Green * (1 - factor));
+        var b = (byte)(color.Blue * (1 - factor));
+        return new SKColor(r, g, b, color.Alpha);
+    }
+
+    /// <summary>
+    /// Gets the best contrast color (black or white) for the given background color
+    /// </summary>
+    private SKColor GetContrastColor(SKColor backgroundColor)
+    {
+        // Calculate luminance
+        var luminance = (0.299 * backgroundColor.Red + 0.587 * backgroundColor.Green + 0.114 * backgroundColor.Blue) / 255;
+        
+        // Return black for light colors, white for dark colors
+        return luminance > 0.5 ? SKColors.Black : SKColors.White;
+    }
+
+
 
     /// <summary>
     /// Creates a legend explaining the driver status symbols
