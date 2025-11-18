@@ -176,7 +176,7 @@ public class CircularTrackPositionCalculator
         var cleanGap = gapString.TrimStart('+');
         return double.TryParse(cleanGap, out var seconds) ? seconds : null;
         
-        return null;
+
     }
 
     /// <summary>
