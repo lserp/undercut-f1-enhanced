@@ -42,6 +42,16 @@ This fork is based on [undercut-f1](https://github.com/JustAman62/undercut-f1) b
 
 All original functionality and features remain intact. This fork only adds enhancements while maintaining full compatibility.
 
+## 🚀 **How to Run**
+
+To run the application directly from the terminal, use the following command from the root directory:
+
+```bash
+dotnet run --project UndercutF1.Console/UndercutF1.Console.csproj
+```
+
+For more detailed installation and usage instructions, see the [Getting Started](#getting-started-with-undercutf1) section below.
+
 ---
 
 ## 📖 **Original Description**
