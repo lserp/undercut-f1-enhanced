@@ -14,6 +14,7 @@ public class PauseClockInputHandler(IDateTimeProvider dateTimeProvider) : IInput
             Screen.TimingTower,
             Screen.TimingHistory,
             Screen.TyreStints,
+            Screen.RelativePerformanceTower,
         ];
 
     public ConsoleKey[] Keys => [ConsoleKey.P];

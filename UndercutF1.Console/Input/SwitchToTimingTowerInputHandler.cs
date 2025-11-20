@@ -4,7 +4,7 @@ public class SwitchToTimingTowerInputHandler(State state) : IInputHandler
 {
     public bool IsEnabled => true;
 
-    public Screen[] ApplicableScreens => [Screen.Main, Screen.ManageSession];
+    public Screen[] ApplicableScreens => [Screen.Main, Screen.ManageSession, Screen.RelativePerformanceTower];
 
     public ConsoleKey[] Keys => [ConsoleKey.T];
 

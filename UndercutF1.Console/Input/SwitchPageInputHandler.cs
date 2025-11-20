@@ -16,6 +16,7 @@ public class SwitchPageInputHandler(TimingDataProcessor timingDataProcessor, Sta
             Screen.TimingHistory,
             Screen.TyreStints,
             Screen.ChampionshipStats,
+            Screen.RelativePerformanceTower,
         ];
 
     public ConsoleKey[] Keys =>
@@ -55,6 +56,7 @@ public class SwitchPageInputHandler(TimingDataProcessor timingDataProcessor, Sta
             case Screen.ChampionshipStats:
             case Screen.TeamRadio:
             case Screen.TyreStints:
+            case Screen.RelativePerformanceTower:
                 state.CursorOffset = 0;
                 break;
         }

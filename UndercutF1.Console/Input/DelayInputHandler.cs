@@ -14,6 +14,7 @@ public class DelayInputHandler(IDateTimeProvider dateTimeProvider) : IInputHandl
             Screen.TimingTower,
             Screen.TimingHistory,
             Screen.TyreStints,
+            Screen.RelativePerformanceTower,
         ];
 
     public ConsoleKey[] DisplayKeys => [ConsoleKey.N, ConsoleKey.M];

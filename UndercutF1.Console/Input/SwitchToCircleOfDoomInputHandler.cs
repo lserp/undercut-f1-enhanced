@@ -16,7 +16,8 @@ public class SwitchToCircleOfDoomInputHandler(State state) : IInputHandler
         Screen.DriverTracker,
         Screen.TyreStints,
         Screen.TeamRadio,
-        Screen.CircleOfDoom
+        Screen.CircleOfDoom,
+        Screen.RelativePerformanceTower
     ];
 
     public bool IsEnabled => true;

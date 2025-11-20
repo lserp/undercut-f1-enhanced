@@ -20,7 +20,8 @@ public class SwitchToCircularTrackInputHandler(State state) : IInputHandler
         Screen.TyreStints,
         Screen.TeamRadio,
         Screen.CircleOfDoom,
-        Screen.CircularTrack
+        Screen.CircularTrack,
+        Screen.RelativePerformanceTower
     ];
 
     public bool IsEnabled => true;

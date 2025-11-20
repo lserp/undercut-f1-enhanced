@@ -4,7 +4,7 @@ public class SwitchToSessionInputHandler(State state) : IInputHandler
 {
     public bool IsEnabled => true;
 
-    public Screen[] ApplicableScreens => [Screen.Main, Screen.TimingTower];
+    public Screen[] ApplicableScreens => [Screen.Main, Screen.TimingTower, Screen.RelativePerformanceTower];
 
     public ConsoleKey[] Keys => [ConsoleKey.S];
 

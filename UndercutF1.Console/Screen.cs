@@ -20,4 +20,6 @@ public enum Screen
     DownloadTranscriptionModel,
     Info,
     SelectDriver,
+    RelativePerformanceTower,
+    DriverStats,
 }

@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNet.SignalR.Client;
 using Microsoft.Extensions.Logging;
@@ -54,7 +55,7 @@ public sealed class LiveTimingClient(
 
         DisposeConnection();
 
-        Connection = new HubConnection("http://livetiming.formula1.com/signalr")
+        Connection = new HubConnection("https://livetiming.formula1.com/signalr")
         {
             CookieContainer = new CookieContainer(),
             TraceWriter = new LogWriter(logger),
@@ -122,19 +123,27 @@ public sealed class LiveTimingClient(
             );
 
             var json = JsonNode.Parse(res);
-            var data = json?["A"];
-
-            if (data is null)
-                return;
-            if (data.AsArray().Count != 3)
+            if (json is null)
                 return;
 
-            var eventData = data[1] is JsonValue ? data[1]!.ToString() : data[1]!.ToJsonString();
-            timingService.EnqueueAsync(
-                data[0]!.ToString(),
-                eventData,
-                DateTimeOffset.Parse(data[2]!.ToString())
-            );
+            if (json["A"] is not null)
+            {
+                var data = json["A"];
+                if (data!.AsArray().Count != 3)
+                    return;
+
+                var eventData = data[1] is JsonValue ? data[1]!.ToString() : data[1]!.ToJsonString();
+                timingService.EnqueueAsync(
+                    data[0]!.ToString(),
+                    eventData,
+                    DateTimeOffset.Parse(data[2]!.ToString())
+                );
+            }
+            else
+            {
+                var parts = json.Deserialize<RawTimingDataPoint>();
+                timingService.EnqueueAsync(parts.Type, parts.Json?.ToString(), parts.DateTime);
+            }
         }
         catch (Exception ex)
         {
